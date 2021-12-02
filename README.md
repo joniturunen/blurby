@@ -1,6 +1,6 @@
 # Blurby
 
-Simple little Flask app that takes paste bin like of data from user and stores it in a sqlite file.
+Simple little Flask app that takes pastebin-like of data from user and stores it in a sqlite file.
 
 ## How-To
 
