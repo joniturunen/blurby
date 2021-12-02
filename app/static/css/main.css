@@ -7,6 +7,44 @@
 	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
 */
 
+.tooltip {
+	position: relative;
+	display: inline-block;
+  }
+  
+  .tooltip .tooltiptext {
+	visibility: hidden;
+	width: 140px;
+	background-color: #555;
+	color: #fff;
+	text-align: center;
+	border-radius: 6px;
+	padding: 5px;
+	position: absolute;
+	z-index: 1;
+	bottom: 150%;
+	left: 50%;
+	margin-left: -75px;
+	opacity: 0;
+	transition: opacity 0.3s;
+  }
+  
+  .tooltip .tooltiptext::after {
+	content: "";
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	margin-left: -5px;
+	border-width: 5px;
+	border-style: solid;
+	border-color: #555 transparent transparent transparent;
+  }
+  
+  .tooltip:hover .tooltiptext {
+	visibility: visible;
+	opacity: 1;
+  }
+
 html, body, div, span, applet, object,
 iframe, h1, h2, h3, h4, h5, h6, p, blockquote,
 pre, a, abbr, acronym, address, big, cite,
@@ -151,7 +189,7 @@ input, select, textarea {
 		font-family: "Merriweather", Georgia, serif;
 		font-weight: 300;
 		font-size: 1rem;
-		line-height: 2.375;
+		line-height: 1.5;
 	}
 
 	a {
@@ -2383,7 +2421,7 @@ input, select, textarea {
 	}
 
 	textarea {
-		padding: 0.75rem 1rem;
+		padding: 0.50rem 0.75rem;
 	}
 
 	input[type="checkbox"],
@@ -2919,9 +2957,6 @@ input, select, textarea {
 			position: relative;
 		}
 
-		header > p {
-			font-style: italic;
-		}
 
 		header > h1 + p {
 			font-size: 1.1rem;
@@ -3779,7 +3814,7 @@ input, select, textarea {
 		}
 
 		#main > .post {
-			padding: 8rem 8rem 6rem 8rem ;
+			padding: 6rem 10rem 2rem 10rem ;
 		}
 
 			#main > .post header.major > .date {
