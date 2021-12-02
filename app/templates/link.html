@@ -1,0 +1,52 @@
+{% extends 'base_structure.html' %}
+
+<!-- HEAD/TITLE -->
+{% block head %}
+<title>🧪 App</title>
+{% endblock %}
+
+<!-- BODY/HEADER  -->
+{% block header %}
+<a href="./link/{{ sha_link }}" class="logo">Such secret!</a>
+{% endblock %}
+
+<!-- BODY/MAIN -->
+{% block main %}
+<header class="major">
+    <span class="date">Secret link generated</span>
+
+    <section>
+        <form method="GET" action="./link/{{ sha_link }}">
+            <div class="fields">
+                <div class="field">
+                    <input type="text" value="{{ url }}link/{{ sha_link }}" id="sha_link" disabled />
+                </div>
+                <div class="field">
+                    <div class="tooltip">
+                        <ul class="actions">
+                            <li>
+                                <button onclick="copyLink()" onmouseout="outFunc()">
+                                <span class="tooltiptext" id="myTooltip">Copy to clipboard</span>
+                                Copy text
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </section>
+    
+</header>
+{% endblock %}
+
+
+
+
+{% block footer %}
+<footer id="footer">
+    <section>
+        <h4><a href="./link/{{ sha_link }}">Send the hash link to your friend 😈</a></h4>
+    </section>
+</footer>
+{% endblock %}

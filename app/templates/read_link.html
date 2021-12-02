@@ -1,0 +1,51 @@
+{% extends 'base_structure.html' %}
+
+<!-- BODY/HEADER  -->
+{% block header %}
+<a href="#" class="logo">Secret link recovered</a>
+
+{% endblock %}
+
+<!-- BODY/MAIN -->
+{% block main %}
+<header class="major">
+    <!-- <span class="date">April 25, 2017</span> -->
+    <h4>The secret messages reveals as follows 😈</h4>
+    <textarea name="data" id="data" rows="12" maxlength="16384" disabled>{{ retrieved_message }}</textarea>
+    <p></p>
+</header>
+<form method="GET" action="/delete/{{ sha_link }}">
+    <div class="fields">
+        <div class="field">
+            <label for="created">Message was created</label>
+            <input type="text" name="created" id="created" value="{{ time }}" disabled />
+        </div>
+        <div class="field">
+            <label for="sha">SHA link</label>
+            <input type="text" name="sha" id="sha" value="{{ sha_link }}" disabled />
+        </div>
+    </div>
+    <ul class="actions">
+        <li><input type="submit" value="Delete the message" /></li>
+    </ul>
+</form>
+{% endblock %}
+
+{% block footer %}
+<footer id="footer">
+
+
+    <section>
+        <form method="GET" action="/">
+            <ul class="actions">
+                <li><input type="submit" value="Create a new secret message! 😈" /></li>
+            </ul>
+        </form>
+
+    </section>
+
+
+
+</footer>
+
+{% endblock %}
