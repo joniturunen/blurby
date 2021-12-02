@@ -28,3 +28,7 @@ Theme:
 Massively by HTML5 UP
 html5up.net | @ajlkn
 Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+
+## Screenshot
+
+![Screenshot of Blurby](/blurby.jpg?raw=true "Screenshot of retrieved message")
