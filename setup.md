@@ -14,10 +14,4 @@ pip install flask flask-sqlalchemy
 
 ## Setting up sqlite
 
-Run `python3` from bash.
-
-```python
->>> from main import db
->>> db.create_all()
->>> quit()
-```
+Run `python setup_database.py` from app directory.
