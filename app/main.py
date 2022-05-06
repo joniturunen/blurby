@@ -1,25 +1,56 @@
+import multiprocessing
+from statistics import multimode
 from flask import Flask, render_template, request, redirect
 from flask.templating import _render
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime as dt
-import time
+from datetime import datetime, timedelta
 from urllib.parse import urlparse
-import hashlib
-
 from werkzeug.utils import redirect
+import hashlib, time, logging, threading, sys
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../data/sqlite.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+# logging conf
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('./blurby.log'),
+        logging.StreamHandler(sys.stdout)]
+    )
+logger = logging.getLogger(' Blurby ')
+# How long to keep data in the database
+ttl = timedelta(hours=48)
 
 class Data(db.Model):
     sha_link = db.Column(db.String(64), primary_key=True)
     data = db.Column(db.Text, nullable=False)
-    time_stamp = db.Column(db.DateTime, default=dt.now)
+    time_stamp = db.Column(db.DateTime, default=datetime.now())
+    keep_until = db.Column(db.DateTime, default=datetime.now() + ttl)
 
     def __repr__(self):
         return '<Data %r>' % self.sha_link
+
+class CleanUpCrew():
+    # remove data older than 48 hours
+    def __init__(self):
+        # Define the interval in seconds for the clean_up function
+        self.interval = 60
+        thread = threading.Thread(target=self.clean_up, args=())
+        thread.daemon = True
+        thread.start()
+    
+    def clean_up(self):
+        while True:
+            logger.info('Checking for old data entries...')
+            # if there are entries in the database that are older than 48 hours remove them
+            if Data.query.filter(Data.keep_until < datetime.now()).all():
+                logger.info('Removing old entries')
+                Data.query.filter(Data.keep_until < datetime.now()).delete()
+                db.session.commit()
+                # write log entry
+                logger.info(f'Cleaned up {len(Data.query.all())} entries')
+            time.sleep(self.interval)
 
 
 @app.route('/', methods=['POST', 'GET'])
@@ -46,7 +77,7 @@ def index():
 @app.route('/link/<string:sha_link>')
 def read(sha_link):
     data = Data.query.get_or_404(sha_link)
-    return render_template('read_link.html', retrieved_message=data.data, time=data.time_stamp, sha_link=data.sha_link)
+    return render_template('read_link.html', retrieved_message=data.data, time=data.time_stamp, sha_link=data.sha_link, ttl=data.keep_until)
 
 
 @app.route('/delete/<string:sha_link>')
@@ -61,4 +92,7 @@ def delete(sha_link):
         return render_template('msg.html', msg_titl='⚠ There was an error!', msg='Message was not deleted, maybe some one deleted it before you?')
 
 if __name__ == "__main__":
+    # start clean_up crew process in background
+    cc = CleanUpCrew()
     app.run(debug=True)
+
