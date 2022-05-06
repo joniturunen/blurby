@@ -1,0 +1,41 @@
+<!-- Form for giving SHA to find a message -->
+{% extends 'base_structure.html' %}
+
+<!-- BODY/HEADER  -->
+{% block header %}
+<!-- <a href="./link/{{ sha_link }}" class="logo">Such secret!</a> -->
+{% endblock %}
+
+<!-- BODY/MAIN -->
+{% block main %}
+<header class="major">
+    <span class="date">Input your SHA</span>
+
+    <section>
+
+
+        <form method="POST" action="/find">
+            <div class="fields">
+                <div class="field">
+                    <input type="text" placeholder="Paste your SHA here" id="sha_link" name="sha_link" />
+                </div>
+            </div>
+            <ul class="actions special">
+                <li><input type="submit" value="Find the secret" /></li>
+            </ul>
+        </form>
+    </section>
+    
+</header>
+{% endblock %}
+
+
+
+
+{% block footer %}
+<footer id="footer">
+    <!-- <section>
+        <h4><a href="./link/{{ sha_link }}">Send the hash link to your friend 😈</a></h4>
+    </section> -->
+</footer>
+{% endblock %}

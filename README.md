@@ -8,7 +8,6 @@ Just run `python ./app/main.py` and head out to your browser with the url [http:
 
 ## Todo
 
-- Add a process to clean up older data from the database
 - Add Dockerfile
 - Experiment with redis or some other db
 

@@ -2,7 +2,7 @@
 
 <!-- BODY/HEADER  -->
 {% block header %}
-<a href="#" class="logo">Secret link recovered</a>
+<!-- <a href="#" class="logo">Secret link recovered</a> -->
 
 {% endblock %}
 
@@ -21,8 +21,12 @@
             <input type="text" name="created" id="created" value="{{ time }}" disabled />
         </div>
         <div class="field">
-            <label for="sha">SHA link</label>
+            <label for="sha">SHA</label>
             <input type="text" name="sha" id="sha" value="{{ sha_link }}" disabled />
+        </div>
+        <div class="field">
+            <label for="created">Message will be kept until</label>
+            <input type="text" name="created" id="created" value="{{ ttl }}" disabled />
         </div>
     </div>
     <ul class="actions">

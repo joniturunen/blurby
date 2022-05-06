@@ -1,0 +1,58 @@
+{% extends 'base_structure.html' %}
+
+
+<!-- BODY/INTRO -->
+{% block intro %}
+<div id="intro">
+<h1>🙊 Blurby</h1>
+<h3>Blurb your secrets</h3>
+    <ul class="actions">
+        <!-- <li><a href="#header" class="button icon solid solo fa-arrow-down scrolly">ACTION!</a></li> -->
+    </ul>
+</div>
+{% endblock %}
+
+<!-- BODY/HEADER  -->
+{% block header %}
+<!-- <a href="#" class="logo">Data</a> -->
+{% endblock %}
+
+<!-- BODY/MAIN -->
+{% block main %}
+<header class="major">
+    <!-- Basic information about the application-->
+    <section>
+        <h4>What is Blurby?</h4>
+        <p>Blurby is a web application that allows you to store your secrets in a temporary place safely.
+        You can share your secrets via a SHA ID or with a direct URL with your friends.
+        </p>
+    </section>
+    <!-- Version and author information -->
+    <section>
+        <h4>TTL value (days)</h4>
+        <input type="text" name="ttl" id="ttl" value="{{ ttl }}" disabled />
+        <h4>DB configuration</h4>
+        <input type="text" name="db_conf" id="db_conf" value="{{ db_conf }}" disabled />
+        <h4>Version</h4>
+        <input type="text" name="version" id="version" value="{{ version }}" disabled />
+        <h4>Author</h4>
+        <input type="text" name="author" id="author" value="{{ author }}" disabled />
+    </section>
+
+
+</header>
+{% endblock %}
+
+
+
+
+<!-- BODY/FOOTER -->
+{% block footer %}
+<footer id="footer">
+    <section>
+
+    </section>
+
+</footer>
+
+{% endblock %}
