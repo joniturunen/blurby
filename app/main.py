@@ -1,12 +1,14 @@
-import multiprocessing
 from statistics import multimode
 from flask import Flask, render_template, request, redirect
 from flask.templating import _render
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
-from werkzeug.utils import redirect
 import hashlib, time, logging, threading, sys
+
+# Define version and author
+__version__ = '0.1.1'
+__author__ = 'Joni Turunen'
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../data/sqlite.db'
@@ -45,11 +47,11 @@ class CleanUpCrew():
             logger.info('Checking for old data entries...')
             # if there are entries in the database that are older than 48 hours remove them
             if Data.query.filter(Data.keep_until < datetime.now()).all():
-                logger.info('Removing old entries')
+                logger.info(f'Found data entries that are older than {ttl}, deleting...')
                 Data.query.filter(Data.keep_until < datetime.now()).delete()
                 db.session.commit()
                 # write log entry
-                logger.info(f'Cleaned up {len(Data.query.all())} entries')
+                logger.info(f'Cleaned up old data entries!')
             time.sleep(self.interval)
 
 
@@ -83,7 +85,6 @@ def read(sha_link):
 @app.route('/delete/<string:sha_link>')
 def delete(sha_link):
     data_to_delete = Data.query.get_or_404(sha_link)
-
     try:
         db.session.delete(data_to_delete)
         db.session.commit()
@@ -91,8 +92,24 @@ def delete(sha_link):
     except:
         return render_template('msg.html', msg_titl='⚠ There was an error!', msg='Message was not deleted, maybe some one deleted it before you?')
 
+@app.route('/find', methods=['POST', 'GET'])
+def find():
+    if request.method == 'POST':
+        sha_link = request.form['sha_link']
+        return redirect(f'/link/{sha_link}')
+    elif request.method == 'GET':
+        return render_template('find.html')
+
+
+# Render About page
+@app.route('/about')
+def about():
+    return render_template('about.html', ttl=ttl, version=__version__, author=__author__, db_conf=str(app.config['SQLALCHEMY_DATABASE_URI']))
+
+
+
 if __name__ == "__main__":
     # start clean_up crew process in background
     cc = CleanUpCrew()
-    app.run(debug=True)
+    app.run(debug=False)
 
