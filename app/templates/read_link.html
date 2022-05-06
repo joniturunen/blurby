@@ -24,6 +24,10 @@
             <label for="sha">SHA link</label>
             <input type="text" name="sha" id="sha" value="{{ sha_link }}" disabled />
         </div>
+        <div class="field">
+            <label for="created">Message will be kept until</label>
+            <input type="text" name="created" id="created" value="{{ ttl }}" disabled />
+        </div>
     </div>
     <ul class="actions">
         <li><input type="submit" value="Delete the message" /></li>
