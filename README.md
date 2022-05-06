@@ -22,7 +22,7 @@ Note the data folder requires a SQLlite database to be created, check [documenta
 
 ## Todo
 
-- Add Dockerfile
+- WSGI installation for containers
 - Experiment with redis or some other db
 
 ## Credits
