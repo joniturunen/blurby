@@ -6,9 +6,23 @@ Simple little Flask app that takes pastebin-like of data from user and stores it
 
 Just run `python ./app/main.py` and head out to your browser with the url [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
+### Initializing database
+
+To create a blank Sqlite for the app use the `python ./app/setup_database.py` command. 
+
+
+## Using docker
+
+To use docker simply run the container with prefered volume maps. 
+
+ex. 
+`docker container run -v /some/path/logs:/data/logs -v /your/path/data:/data joniturunen/blurby`
+
+Note the data folder requires a SQLlite database to be created, check [documentation for setting up SQLite](#initializing-database).
+
 ## Todo
 
-- Add Dockerfile
+- WSGI installation for containers
 - Experiment with redis or some other db
 
 ## Credits
