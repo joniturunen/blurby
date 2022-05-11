@@ -9,7 +9,7 @@ PATH=$PATH:~/.local/bin
 virtualenv env
 source env/bin/activate
 pip -V #to check that we are in the 'env'
-pip install flask flask-sqlalchemy
+pip install -r requirements.txt
 ```
 
 ## Setting up sqlite
