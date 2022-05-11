@@ -101,6 +101,7 @@ def find():
             if sha_link.isalnum():
                 # Sanitize with bleach
                 sha_link = bleach.clean(sha_link)
+                # file deepcode ignore OR: sha_link gets cleaned by bleach, fixed 11th of May 2022
                 return redirect(f'/link/{sha_link}')
             else:
                 return render_template('msg.html', msg_title='⚠ Invalid link!', msg='The link you entered is not valid, please try again.')
