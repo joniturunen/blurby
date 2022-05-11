@@ -4,10 +4,10 @@ from flask.templating import _render
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
-import hashlib, time, logging, threading, sys
+import hashlib, time, logging, threading, sys, bleach
 
 # Define version and author
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 __author__ = 'Joni Turunen'
 
 app = Flask(__name__)
@@ -94,9 +94,19 @@ def delete(sha_link):
 
 @app.route('/find', methods=['POST', 'GET'])
 def find():
-    if request.method == 'POST':
+    if request.method == 'POST':        
         sha_link = request.form['sha_link']
-        return redirect(f'/link/{sha_link}')
+        # Check if sha_link is valid and 'secure'
+        if len(sha_link) == 64:
+            if sha_link.isalnum():
+                # Sanitize with bleach
+                sha_link = bleach.clean(sha_link)
+                return redirect(f'/link/{sha_link}')
+            else:
+                return render_template('msg.html', msg_title='⚠ Invalid link!', msg='The link you entered is not valid, please try again.')
+        else:
+            # Error message since the sha is not valid or not found
+            return render_template('msg.html', msg_title='⚠ There was an error!', msg='Check your SHA link and try again!')
     elif request.method == 'GET':
         return render_template('find.html')
 
