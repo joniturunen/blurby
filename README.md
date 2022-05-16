@@ -22,6 +22,11 @@ Note the data folder requires a SQLlite database to be created, check [documenta
 
 ## Todo
 
+- Make max string length parameterized
+- TTL parameter howto
+- Possibility to change TTL by user (selection list)
+- Possibility to create logfile entries
+- SSO (SAML2) support (read http headers, remote_user info) to log who CRUDs entries
 - WSGI installation for containers
 - Experiment with redis or some other db
 
