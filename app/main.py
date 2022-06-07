@@ -14,6 +14,7 @@ db_file = os.getenv('BLURBY_DB_FILE', '/blurby/data/sqlite.db')
 ttl_hours = int(os.getenv('BLURBY_TTL_HOURS', '48'))
 threads = int(os.getenv('BLURBY_THREADS', '8'))
 
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_file}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -165,6 +166,7 @@ if __name__ == "__main__":
     logger.info(f'\033[1;32m{"-"*30}\033[0m')
     # Call check_preconditions function to check if database file exists
     check_preconditions()
+    
     # Start clean_up crew process in background
     cc = CleanUpCrew()
     # Run this Flask App in production mode
