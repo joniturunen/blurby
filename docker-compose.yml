@@ -9,5 +9,9 @@ services:
     user: appuser
     environment:
       - BLURBY_DB_FILE=/blurby/data/sqlite.db
+      - BLURBY_TTL_HOURS=48
+      - BLURBY_THREADS=6
+    ports:
+      - "8080:8080"
     volumes:
       - ./data:/blurby/data
