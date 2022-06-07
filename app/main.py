@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 import hashlib, time, logging, threading, sys, bleach, os
 
 # Define version and author
-__version__ = '0.1.4-SNAPSHOT'
+__version__ = '0.1.4'
 __author__ = 'Joni Turunen'
 
 # Read db_file from ENV variable
@@ -160,4 +160,4 @@ if __name__ == "__main__":
     cc = CleanUpCrew()
     # Run this Flask App in production mode
     from waitress import serve
-    serve(app, host='192.168.138.163', port=8080, threads=8)
+    serve(app, host='0.0.0.0', port=8080, threads=8)
