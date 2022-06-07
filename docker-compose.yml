@@ -6,3 +6,8 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+    user: appuser
+    environment:
+      - BLURBY_DB_FILE=/blurby/data/sqlite.db
+    volumes:
+      - ./data:/blurby/data
