@@ -6,11 +6,13 @@ from urllib.parse import urlparse
 import hashlib, time, logging, threading, sys, bleach, os
 
 # Define version and author
-__version__ = '0.1.4'
+__version__ = '0.1.5'
 __author__ = 'Joni Turunen'
 
 # Read db_file from ENV variable
-db_file = os.getenv('BLURBY_DB_FILE')
+db_file = os.getenv('BLURBY_DB_FILE', '/blurby/data/sqlite.db')
+ttl_hours = int(os.getenv('BLURBY_TTL_HOURS', '48'))
+threads = int(os.getenv('BLURBY_THREADS', '8'))
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_file}'
@@ -23,8 +25,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
         logging.StreamHandler(sys.stdout)]
     )
 logger = logging.getLogger(' Blurby ')
-# How long to keep data in the database
-ttl = timedelta(hours=48)
+
+# Generate timedelta object from given hours
+ttl = timedelta(hours=ttl_hours)
 
 class Data(db.Model):
     sha_link = db.Column(db.String(64), primary_key=True)
@@ -113,18 +116,13 @@ def find():
     elif request.method == 'GET':
         return render_template('find.html')
 
-
 # Render About page
 @app.route('/about')
 def about():
     return render_template('about.html', ttl=ttl, version=__version__, author=__author__, db_conf=str(app.config['SQLALCHEMY_DATABASE_URI']))
 
 # Function to check preconditions for database file creation
-def check_db_file():
-    # Check if BLURBY_DB_FILE is set
-    if db_file is None:
-        logger.error('BLURBY_DB_FILE environment variable is not present!')
-        sys.exit(1)
+def check_preconditions():
     # Check if database file exists
     logger.info(f'Checking if database file {db_file} exists...')
     # Check if filepath is valid path
@@ -149,15 +147,26 @@ def check_db_file():
     else:
         # Write log entry
         logger.info(f"Database file: {db_file} found!")
+    logger.info(f'\033[1mPreconditions check passed with following env values\033[0m:\033[1;32m \
+                \n{" "*42}- BLURBY_TTL_HOURS = {ttl_hours} \
+                \n{" "*42}- BLURBY_THREADS = {threads} \
+                \n{" "*42}- BLURBY_DB_FILE = {db_file} \
+                \033[0m')
 
+# Render About page
+@app.route('/about')
+def about():
+    return render_template('about.html', ttl=ttl, version=__version__, author=__author__, db_conf=str(app.config['SQLALCHEMY_DATABASE_URI']))
 
 if __name__ == "__main__":
     # Echo the start of program to logger in color
-    logger.info(f'\033[1;32m{"-"*10}{__version__}{"-"*10}\033[0m')
-    # Call check_db_file function to check if database file exists
-    check_db_file()
+    logger.info(f'\033[1;32m{"-"*30}\033[0m')
+    logger.info(f'\033[1m\033[1;32mStarting Blurby v{__version__}...\033[0m')
+    logger.info(f'\033[1;32m{"-"*30}\033[0m')
+    # Call check_preconditions function to check if database file exists
+    check_preconditions()
     # Start clean_up crew process in background
     cc = CleanUpCrew()
     # Run this Flask App in production mode
     from waitress import serve
-    serve(app, host='0.0.0.0', port=8080, threads=8)
+    serve(app, host='0.0.0.0', port=8080, threads=threads)
