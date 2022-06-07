@@ -3,6 +3,7 @@ flask-test.code-workspace
 data/**
 *.db
 !data/.gitkeep
+poc-compose.yml
 
 # Python.gitignore
 # https://raw.githubusercontent.com/github/gitignore/master/Python.gitignore
