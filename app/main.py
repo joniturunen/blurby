@@ -6,11 +6,14 @@ from urllib.parse import urlparse
 import hashlib, time, logging, threading, sys, bleach, os
 
 # Define version and author
-__version__ = '0.1.4'
+__version__ = '0.1.4-SNAPSHOT'
 __author__ = 'Joni Turunen'
 
+# Read db_file from ENV variable
+db_file = os.getenv('BLURBY_DB_FILE')
+
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../data/sqlite.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_file}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 # logging conf
@@ -116,22 +119,45 @@ def find():
 def about():
     return render_template('about.html', ttl=ttl, version=__version__, author=__author__, db_conf=str(app.config['SQLALCHEMY_DATABASE_URI']))
 
+# Function to check preconditions for database file creation
+def check_db_file():
+    # Check if BLURBY_DB_FILE is set
+    if db_file is None:
+        logger.error('BLURBY_DB_FILE environment variable is not present!')
+        sys.exit(1)
+    # Check if database file exists
+    logger.info(f'Checking if database file {db_file} exists...')
+    # Check if filepath is valid path
+    if not os.path.isdir(os.path.dirname(db_file)):
+        logger.error(f'{db_file} is not a valid path!')
+        sys.exit(1)
+    # Check if db_file variable includes a filename at the end
+    if not db_file.endswith('.db'):
+        logger.error(f'{db_file} is not a valid database file!')
+        sys.exit(1)
+    if not os.path.isfile(db_file):
+        # Folder exists and path valid but file not found
+        # Try to create the database if failed log error and exit
+        logger.info(f'Database file {db_file} not found, trying to create it...')
+        try:
+            db.create_all()
+            logger.info(f'Database file {db_file} created!')
+        except:
+            logger.error(f"Could not create database URI {app.config['SQLALCHEMY_DATABASE_URI']}")
+            logger.warning(f'Please check if the database file {db_file} is writable!')
+            sys.exit(1)
+    else:
+        # Write log entry
+        logger.info(f"Database file: {db_file} found!")
 
 
 if __name__ == "__main__":
     # Echo the start of program to logger in color
     logger.info(f'\033[1;32m{"-"*10}{__version__}{"-"*10}\033[0m')
-
-    # Check if database file exists
-    if not os.path.isfile(app.config['SQLALCHEMY_DATABASE_URI']):
-        # Create database file
-        db.create_all()
-        # Write log entry
-        logger.info(f"Created database file: {app.config['SQLALCHEMY_DATABASE_URI']}")
-    else:
-        # Write log entry
-        logger.info(f"Database file: {app.config['SQLALCHEMY_DATABASE_URI']} found!")
+    # Call check_db_file function to check if database file exists
+    check_db_file()
     # Start clean_up crew process in background
     cc = CleanUpCrew()
-    app.run(debug=False)
-
+    # Run this Flask App in production mode
+    from waitress import serve
+    serve(app, host='192.168.138.163', port=8080, threads=8)
