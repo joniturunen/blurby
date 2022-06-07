@@ -31,7 +31,6 @@
         You can share your secrets via a SHA ID or with a direct URL with your friends.
         </p>
         </div>
-
         <div class="field">
             <label for="Version">Version</label>
             <input type="text" name="Version" id="Version" value="{{ version }}" disabled />
@@ -41,20 +40,17 @@
             <input type="text" name="db_conf" id="db_conf" value="{{ db_conf }}" disabled />
         </div>
         <div class="field">
-            <label for="sha">SHA</label>
-            <input type="text" name="sha" id="sha" value="{{ sha_link }}" disabled />
-        </div>
-        <div class="field">
             <label for="ttl">TTL value</label>
             <input type="text" name="ttl" id="ttl" value="{{ ttl }}" disabled />
         </div>
         <div class="field">
-            <label for="Developer">Developer</label>
-            <input type="text" name="Developer" id="Developer" value="{{ author }}" disabled />
-        </div>
-        <div class="field">
             <label for="created">Request headers</label>
             <textarea name="headers" id="headers" rows="24" maxlength="12800" disabled>{{ request_headers }}</textarea>
+        </div>
+
+        <div class="field">
+            <label for="Git">Repository</label>
+            <a href="https://github.com/joniturunen/blurby">GitHub</a>
         </div>
 
     </div>
