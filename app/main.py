@@ -1,8 +1,6 @@
 from flask import Flask, render_template, request, redirect
-from flask.templating import _render
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
-from urllib.parse import urlparse
 import hashlib, time, logging, threading, sys, bleach, os
 
 # Define version and author
@@ -37,6 +35,8 @@ class Data(db.Model):
     data = db.Column(db.Text, nullable=False)
     time_stamp = db.Column(db.DateTime, default=datetime.now())
     keep_until = db.Column(db.DateTime, default=datetime.now() + ttl)
+    creator = db.Column(db.String(64), nullable=False)
+    event_history = db.Column(db.Text)
 
     def __repr__(self):
         return '<Data %r>' % self.sha_link
@@ -70,7 +70,8 @@ def index():
         salty_data = posted_data + str(time.time())
         sha = (hashlib.sha256(salty_data.encode()))
         sha_link=sha.hexdigest()
-        new_data = Data(data=posted_data, sha_link=sha_link)
+        creator = request.headers.get('username') if request.headers.get('username') else 'anonymous'
+        new_data = Data(data=posted_data, sha_link=sha_link, creator=creator)
         try:
             db.session.add(new_data)
             db.session.commit()
@@ -87,7 +88,7 @@ def index():
 def read(sha_link):
     data = Data.query.get_or_404(sha_link)
     logger.info(f'{request.headers.get("username")} requested a sha link') if request.headers.get("username") else logger.info(f'Anonymous requested a sha link')
-    return render_template('read_link.html', retrieved_message=data.data, time=data.time_stamp, sha_link=data.sha_link, ttl=data.keep_until)
+    return render_template('read_link.html', retrieved_message=data.data, time=data.time_stamp, sha_link=data.sha_link, ttl=data.keep_until, creator=data.creator, event_history=data.event_history)
 
 @app.route('/delete/<string:sha_link>')
 def delete(sha_link):
@@ -134,7 +135,7 @@ def check_preconditions():
     if not os.path.isdir(os.path.dirname(db_file)):
         logger.error(f'{db_file} is not a valid path!')
         sys.exit(1)
-    # Check if db_file variable includes a filename at the end
+    # Check if db_file variable includes a file extension at the end
     if not db_file.endswith('.db'):
         logger.error(f'{db_file} is not a valid database file!')
         sys.exit(1)
@@ -143,8 +144,8 @@ def check_preconditions():
         # Try to create the database if failed log error and exit
         logger.info(f'Database file {db_file} not found, trying to create it...')
         try:
+            logger.info(f'Create the DB file {db_file}!')
             db.create_all()
-            logger.info(f'Database file {db_file} created!')
         except:
             logger.error(f"Could not create database URI {app.config['SQLALCHEMY_DATABASE_URI']}")
             logger.warning(f'Please check if the database file {db_file} is writable!')

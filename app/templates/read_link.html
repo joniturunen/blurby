@@ -15,7 +15,7 @@
     <p></p>
 </header>
 <form method="GET" action="/delete/{{ sha_link }}">
-    <div class="fields">
+    <div class="fields" align="left">
         <div class="field">
             <label for="created">Message was created</label>
             <input type="text" name="created" id="created" value="{{ time }}" disabled />
@@ -25,8 +25,12 @@
             <input type="text" name="sha" id="sha" value="{{ sha_link }}" disabled />
         </div>
         <div class="field">
-            <label for="created">Message will be kept until</label>
-            <input type="text" name="created" id="created" value="{{ ttl }}" disabled />
+            <label for="ttl">Message will be kept until</label>
+            <input type="text" name="ttl" id="ttl" value="{{ ttl }}" disabled />
+        </div>
+        <div class="field">
+            <label for="creator">Creator (userid)</label>
+            <input type="text" name="creator" id="creator" value="{{ creator }}" disabled />
         </div>
     </div>
     <ul class="actions">
