@@ -26,8 +26,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
     )
 logger = logging.getLogger(' Blurby ')
 
+
 # Generate timedelta object from given hours
 ttl = timedelta(hours=ttl_hours)
+
+
 
 class Data(db.Model):
     sha_link = db.Column(db.String(64), primary_key=True)
@@ -59,13 +62,11 @@ class CleanUpCrew():
                 logger.info(f'Cleaned up old data entries!')
             time.sleep(self.interval)
 
-
 @app.route('/', methods=['POST', 'GET'])
 def index():
     if request.method == 'POST':
         posted_data = request.form['data']
-        o = urlparse(request.base_url)
-        url= o.scheme + '://' + o.netloc + o.path
+        url = request.headers.get('Origin') + '/'
         salty_data = posted_data + str(time.time())
         sha = (hashlib.sha256(salty_data.encode()))
         sha_link=sha.hexdigest()
@@ -73,23 +74,25 @@ def index():
         try:
             db.session.add(new_data)
             db.session.commit()
+            logger.info(f'{request.headers.get("username")} submitted a secret') if request.headers.get("username") else logger.info(f'Anonymous submitted a secret')
             return render_template('link.html', sha_link=sha_link, url=url)
         except:
             return render_template('msg.html', msg_title='⚠ There was an error!', msg='There was a problem connecting the database')
     else:
-
+        logger.info(f'{request.headers.get("username")} requested the default page') if request.headers.get("username") else logger.info(f'Anonymous requested the default page')
         return render_template('main.html')
 
 
 @app.route('/link/<string:sha_link>')
 def read(sha_link):
     data = Data.query.get_or_404(sha_link)
+    logger.info(f'{request.headers.get("username")} requested a sha link') if request.headers.get("username") else logger.info(f'Anonymous requested a sha link')
     return render_template('read_link.html', retrieved_message=data.data, time=data.time_stamp, sha_link=data.sha_link, ttl=data.keep_until)
-
 
 @app.route('/delete/<string:sha_link>')
 def delete(sha_link):
     data_to_delete = Data.query.get_or_404(sha_link)
+    logger.info(f'{request.headers.get("username")} deleted a sha link') if request.headers.get("username") else logger.info(f'Anonymous deleted a sha link')
     try:
         db.session.delete(data_to_delete)
         db.session.commit()
@@ -99,6 +102,7 @@ def delete(sha_link):
 
 @app.route('/find', methods=['POST', 'GET'])
 def find():
+    logger.info(f'{request.headers.get("username")} requested to find a secret') if request.headers.get("username") else logger.info(f'Anonymous requested to find a secret')
     if request.method == 'POST':        
         sha_link = request.form['sha_link']
         # Check if sha_link is valid and 'secure'
@@ -119,7 +123,8 @@ def find():
 # Render About page
 @app.route('/about')
 def about():
-    return render_template('about.html', ttl=ttl, version=__version__, author=__author__, db_conf=str(app.config['SQLALCHEMY_DATABASE_URI']))
+    logger.info(f'{request.headers.get("username")} requested the about page') if request.headers.get("username") else logger.info(f'Anonymous requested the about page')
+    return render_template('about.html', ttl=ttl, version=__version__, author=__author__, db_conf=str(app.config['SQLALCHEMY_DATABASE_URI']), request_headers=request.headers)
 
 # Function to check preconditions for database file creation
 def check_preconditions():
@@ -162,6 +167,12 @@ if __name__ == "__main__":
     check_preconditions()
     # Start clean_up crew process in background
     cc = CleanUpCrew()
-    # Run this Flask App in production mode
-    from waitress import serve
-    serve(app, host='0.0.0.0', port=8080, threads=threads)
+    # If commandline argument --debug is used, run the app in debug mode
+    if len(sys.argv) > 1 and sys.argv[1] == '--debug':
+        app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
+    # Else run the app in production mode
+    else:
+        from waitress import serve
+        serve(app, host='0.0.0.0', port=8080, threads=threads)
+
+    
