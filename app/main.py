@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 import hashlib, time, logging, threading, sys, bleach, os
 
 # Define version and author
-__version__ = '0.1.4'
+__version__ = '0.1.6'
 __author__ = 'Joni Turunen'
 
 # Read db_file from ENV variable
