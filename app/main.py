@@ -1,13 +1,12 @@
-from statistics import multimode
 from flask import Flask, render_template, request, redirect
 from flask.templating import _render
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
-import hashlib, time, logging, threading, sys, bleach
+import hashlib, time, logging, threading, sys, bleach, os
 
 # Define version and author
-__version__ = '0.1.2'
+__version__ = '0.1.4'
 __author__ = 'Joni Turunen'
 
 app = Flask(__name__)
@@ -120,7 +119,19 @@ def about():
 
 
 if __name__ == "__main__":
-    # start clean_up crew process in background
+    # Echo the start of program to logger in color
+    logger.info(f'\033[1;32m{"-"*10}{__version__}{"-"*10}\033[0m')
+
+    # Check if database file exists
+    if not os.path.isfile(app.config['SQLALCHEMY_DATABASE_URI']):
+        # Create database file
+        db.create_all()
+        # Write log entry
+        logger.info(f"Created database file: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    else:
+        # Write log entry
+        logger.info(f"Database file: {app.config['SQLALCHEMY_DATABASE_URI']} found!")
+    # Start clean_up crew process in background
     cc = CleanUpCrew()
     app.run(debug=False)
 
