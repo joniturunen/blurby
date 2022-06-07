@@ -76,19 +76,19 @@ def index():
             db.session.add(new_data)
             db.session.commit()
             logger.info(f'{request.headers.get("username")} submitted a secret') if request.headers.get("username") else logger.info(f'Anonymous submitted a secret')
-            return render_template('link.html', sha_link=sha_link, url=url)
+            return render_template('link.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', sha_link=sha_link, url=url)
         except:
-            return render_template('msg.html', msg_title='⚠ There was an error!', msg='There was a problem connecting the database')
+            return render_template('msg.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', msg_title='⚠ There was an error!', msg='There was a problem connecting the database')
     else:
         logger.info(f'{request.headers.get("username")} requested the default page') if request.headers.get("username") else logger.info(f'Anonymous requested the default page')
-        return render_template('main.html')
+        return render_template('main.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous')
 
 
 @app.route('/link/<string:sha_link>')
 def read(sha_link):
     data = Data.query.get_or_404(sha_link)
     logger.info(f'{request.headers.get("username")} requested a sha link') if request.headers.get("username") else logger.info(f'Anonymous requested a sha link')
-    return render_template('read_link.html', retrieved_message=data.data, time=data.time_stamp, sha_link=data.sha_link, ttl=data.keep_until, creator=data.creator, event_history=data.event_history)
+    return render_template('read_link.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', retrieved_message=data.data, time=data.time_stamp, sha_link=data.sha_link, ttl=data.keep_until, creator=data.creator, event_history=data.event_history)
 
 @app.route('/delete/<string:sha_link>')
 def delete(sha_link):
@@ -97,9 +97,9 @@ def delete(sha_link):
     try:
         db.session.delete(data_to_delete)
         db.session.commit()
-        return render_template('msg.html', msg_title='👌 Message succesfully deleted!', msg='You can create a new secret!')
+        return render_template('msg.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', msg_title='👌 Message succesfully deleted!', msg='You can create a new secret!')
     except:
-        return render_template('msg.html', msg_titl='⚠ There was an error!', msg='Message was not deleted, maybe some one deleted it before you?')
+        return render_template('msg.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', msg_titl='⚠ There was an error!', msg='Message was not deleted, maybe some one deleted it before you?')
 
 @app.route('/find', methods=['POST', 'GET'])
 def find():
@@ -114,18 +114,18 @@ def find():
                 # file deepcode ignore OR: sha_link gets cleaned by bleach, fixed 11th of May 2022
                 return redirect(f'/link/{sha_link}')
             else:
-                return render_template('msg.html', msg_title='⚠ Invalid link!', msg='The link you entered is not valid, please try again.')
+                return render_template('msg.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', msg_title='⚠ Invalid link!', msg='The link you entered is not valid, please try again.')
         else:
             # Error message since the sha is not valid or not found
-            return render_template('msg.html', msg_title='⚠ There was an error!', msg='Check your SHA link and try again!')
+            return render_template('msg.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', msg_title='⚠ There was an error!', msg='Check your SHA link and try again!')
     elif request.method == 'GET':
-        return render_template('find.html')
+        return render_template('find.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous')
 
 # Render About page
 @app.route('/about')
 def about():
     logger.info(f'{request.headers.get("username")} requested the about page') if request.headers.get("username") else logger.info(f'Anonymous requested the about page')
-    return render_template('about.html', ttl=ttl, version=__version__, author=__author__, db_conf=str(app.config['SQLALCHEMY_DATABASE_URI']), request_headers=request.headers)
+    return render_template('about.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', ttl=ttl, version=__version__, author=__author__, db_conf=str(app.config['SQLALCHEMY_DATABASE_URI']), request_headers=request.headers)
 
 # Function to check preconditions for database file creation
 def check_preconditions():
