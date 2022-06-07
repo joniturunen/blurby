@@ -20,29 +20,45 @@
 <!-- BODY/MAIN -->
 {% block main %}
 <header class="major">
-    <!-- Basic information about the application-->
-    <section>
-        <h4>What is Blurby?</h4>
+</header>
+
+    <!-- Application information -->
+<form>
+    <div class="fields" align="left">
+        <div class="field">
+        <label for="About">About Blurby</label>
         <p>Blurby is a web application that allows you to store your secrets in a temporary place safely.
         You can share your secrets via a SHA ID or with a direct URL with your friends.
         </p>
-    </section>
-    <!-- Version and author information -->
-    <section>
-        <h4>TTL value (days)</h4>
-        <input type="text" name="ttl" id="ttl" value="{{ ttl }}" disabled />
-        <h4>DB configuration</h4>
-        <input type="text" name="db_conf" id="db_conf" value="{{ db_conf }}" disabled />
-        <h4>Version</h4>
-        <input type="text" name="version" id="version" value="{{ version }}" disabled />
-        <h4>Author</h4>
-        <input type="text" name="author" id="author" value="{{ author }}" disabled />
-        <h4>Requst Headers</h4>
-        <textarea name="headers" id="headers" rows="24" maxlength="12800" disabled>{{ request_headers }}</textarea>
-    </section>
+        </div>
 
+        <div class="field">
+            <label for="Version">Version</label>
+            <input type="text" name="Version" id="Version" value="{{ version }}" disabled />
+        </div>
+        <div class="field">
+            <label for="created">DB confs</label>
+            <input type="text" name="db_conf" id="db_conf" value="{{ db_conf }}" disabled />
+        </div>
+        <div class="field">
+            <label for="sha">SHA</label>
+            <input type="text" name="sha" id="sha" value="{{ sha_link }}" disabled />
+        </div>
+        <div class="field">
+            <label for="ttl">TTL value</label>
+            <input type="text" name="ttl" id="ttl" value="{{ ttl }}" disabled />
+        </div>
+        <div class="field">
+            <label for="Developer">Developer</label>
+            <input type="text" name="Developer" id="Developer" value="{{ author }}" disabled />
+        </div>
+        <div class="field">
+            <label for="created">Request headers</label>
+            <textarea name="headers" id="headers" rows="24" maxlength="12800" disabled>{{ request_headers }}</textarea>
+        </div>
 
-</header>
+    </div>
+</form>
 {% endblock %}
 
 
