@@ -23,5 +23,8 @@ USER appuser
 COPY requirements.txt . 
 RUN python -m pip install -r requirements.txt
 
+# Add /home/appuser/.local/bin to PATH
+ENV PATH /home/appuser/.local/bin:$PATH
+
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
 CMD ["python", "/app/main.py"]
