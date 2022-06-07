@@ -4,13 +4,14 @@ from datetime import datetime, timedelta
 import hashlib, time, logging, threading, sys, bleach, os
 
 # Define version and author
-__version__ = '0.1.6'
+__version__ = '0.1.7'
 __author__ = 'Joni Turunen'
 
 # Read db_file from ENV variable
 db_file = os.getenv('BLURBY_DB_FILE', '/blurby/data/sqlite.db')
 ttl_hours = int(os.getenv('BLURBY_TTL_HOURS', '48'))
 threads = int(os.getenv('BLURBY_THREADS', '8'))
+host_ipaddr = os.getenv('BLURBY_HOST_IP', '0.0.0.0')
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_file}'
@@ -170,10 +171,10 @@ if __name__ == "__main__":
     cc = CleanUpCrew()
     # If commandline argument --debug is used, run the app in debug mode
     if len(sys.argv) > 1 and sys.argv[1] == '--debug':
-        app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
+        app.run(host=host_ipaddr, port=5000, debug=True, threaded=True)
     # Else run the app in production mode
     else:
         from waitress import serve
-        serve(app, host='0.0.0.0', port=8080, threads=threads)
+        serve(app, host=host_ipaddr, port=8080, threads=threads)
 
     
