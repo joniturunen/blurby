@@ -8,8 +8,9 @@ Just run `python ./app/main.py` and head out to your browser with the url [http:
 
 ### Initializing database
 
-To create a blank Sqlite for the app use the `python ./app/setup_database.py` command. 
+The application now checks if a `BLURBY_DB_FILE` environment variable is set. If it is, it uses that as a DB file. If the file is missing but the path is valid it creates the db file.
 
+Manually: To create a blank Sqlite DB for the app use the `python ./app/setup_database.py` command.
 
 ## Using docker
 
