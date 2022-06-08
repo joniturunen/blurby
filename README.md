@@ -6,6 +6,22 @@ Simple little Flask app that takes pastebin-like of data from user and stores it
 
 Just run `python ./app/main.py` and head out to your browser with the url [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
+Check the Using Docker section for more info.
+
+### Parameters
+
+Configuration is done via environment variables. The following are the available parameters:
+
+    - `BLURBY_DB_FILE`: Path to the sqlite database. (defaults to `/blurby/data/sqlite.db`)
+    - `BLURBY_HOST_IP`: Host to bind the server to. (defaults to `0.0.0.0`)
+    - `BLURBY_TTL_HOURS`: How long to keep a paste in the database. (defaults to `48`)
+    - `BLURBY_THREADS`: Number of threads to use for processing. (defaults to `8`)
+
+When run from the command line, the following *additional* parameters are available:
+
+    - `--debug`: Run in debug mode.
+
+
 ### Initializing database
 
 The application now checks if a `BLURBY_DB_FILE` environment variable is set. If it is, it uses that as a DB file. If the file is missing but the path is valid it creates the db file.
@@ -23,13 +39,9 @@ Note the data folder requires a SQLlite database to be created, check [documenta
 
 ## Todo
 
-- Make max string length parameterized
-- TTL parameter howto
-- Possibility to change TTL by user (selection list)
 - Possibility to create logfile entries
-- SSO (SAML2) support (read http headers, remote_user info) to log who CRUDs entries
-- WSGI installation for containers
 - Experiment with redis or some other db
+- Add view history to entries
 
 ## Credits
 
