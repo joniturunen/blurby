@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import hashlib, time, logging, threading, sys, bleach, os
 
 # Define version and author
-__version__ = '0.1.7'
+__version__ = '0.1.7.1'
 __author__ = 'Joni Turunen'
 
 # Read db_file from ENV variable
