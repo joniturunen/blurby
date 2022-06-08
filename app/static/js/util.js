@@ -95,7 +95,8 @@
 			}, userConfig);
 
 			// Expand "target" if it's not a jQuery object already.
-				if (typeof config.target != 'jQuery')
+				// file deepcode ignore WrongTypeComparison: <please specify a reason of ignoring this>
+    if (typeof config.target != 'jQuery')
 					config.target = $(config.target);
 
 		// Panel.
