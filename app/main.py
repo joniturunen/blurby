@@ -171,6 +171,7 @@ if __name__ == "__main__":
     cc = CleanUpCrew()
     # If commandline argument --debug is used, run the app in debug mode
     if len(sys.argv) > 1 and sys.argv[1] == '--debug':
+        # deepcode ignore RunWithDebugTrue: <please specify a reason of ignoring this>
         app.run(host=host_ipaddr, port=5000, debug=True, threaded=True)
     # Else run the app in production mode
     else:
