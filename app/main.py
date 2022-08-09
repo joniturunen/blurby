@@ -34,8 +34,12 @@ ttl = timedelta(hours=ttl_hours)
 class Data(db.Model):
     sha_link = db.Column(db.String(64), primary_key=True)
     data = db.Column(db.Text, nullable=False)
-    time_stamp = db.Column(db.DateTime, default=datetime.now())
-    keep_until = db.Column(db.DateTime, default=datetime.now() + ttl)
+    time_stamp = db.Column(db.DateTime, default=datetime.now)
+    # Static method that automatically returns time_stamp value plus ttl.
+    @staticmethod
+    def keep_until():
+        return datetime.now() + ttl
+    keep_until = db.Column(db.DateTime, default=keep_until)
     creator = db.Column(db.String(64), nullable=False)
     event_history = db.Column(db.Text)
 
