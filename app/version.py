@@ -1,1 +1,1 @@
-version='0.1.7.2'
+BLURBY_VERSION='0.1.7.3'
