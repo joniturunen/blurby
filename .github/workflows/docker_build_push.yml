@@ -23,7 +23,7 @@ jobs:
     steps:
       - name: Get a version number
         run: | 
-          source ./app/version.py
+          source app/version.py
           echo "Blurby version: $BLURBY_VERSION"
 
       - uses: actions/checkout@v2
