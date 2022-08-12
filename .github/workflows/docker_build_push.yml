@@ -33,7 +33,7 @@ jobs:
         name: Build & push Docker image
         with:
           image: joniturunen/blurby
-          tags: ${{ BLURBY_VERSION }}, latest
+          tags: ${{ env.BLURBY_VERSION }}, latest
           registry: docker.io
           dockerfile: Dockerfile
           username: ${{ secrets.DOCKER_USERNAME }}
