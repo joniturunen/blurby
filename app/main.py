@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
+from version import version
 import hashlib, time, logging, threading, sys, bleach, os
 
 # Define version and author
-__version__ = '0.1.7.1'
+__version__ = version
 __author__ = 'Joni Turunen'
 
 # Read db_file from ENV variable
@@ -34,8 +35,12 @@ ttl = timedelta(hours=ttl_hours)
 class Data(db.Model):
     sha_link = db.Column(db.String(64), primary_key=True)
     data = db.Column(db.Text, nullable=False)
-    time_stamp = db.Column(db.DateTime, default=datetime.now())
-    keep_until = db.Column(db.DateTime, default=datetime.now() + ttl)
+    time_stamp = db.Column(db.DateTime, default=datetime.now)
+    # Static method that automatically returns time_stamp value plus ttl.
+    @staticmethod
+    def keep_until():
+        return datetime.now() + ttl
+    keep_until = db.Column(db.DateTime, default=keep_until)
     creator = db.Column(db.String(64), nullable=False)
     event_history = db.Column(db.Text)
 
@@ -163,7 +168,7 @@ def check_preconditions():
 if __name__ == "__main__":
     # Echo the start of program to logger in color
     logger.info(f'\033[1;32m{"-"*30}\033[0m')
-    logger.info(f'\033[1m\033[1;32mStarting Blurby v{__version__}...\033[0m')
+    logger.info(f'\033[1m\033[1;32mStarting Blurby v{__version__}\033[0m')
     logger.info(f'\033[1;32m{"-"*30}\033[0m')
     # Call check_preconditions function to check if database file exists
     check_preconditions()
