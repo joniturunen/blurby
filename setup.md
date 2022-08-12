@@ -15,3 +15,5 @@ pip install -r requirements.txt
 ## Setting up sqlite
 
 Run `python setup_database.py` from app directory.
+
+Note: Path to blurby's data folder must exists and be writable. By default (if not given as env) is `/blurby/data/sqlite.db`.
