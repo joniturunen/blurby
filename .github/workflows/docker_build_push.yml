@@ -26,7 +26,7 @@ jobs:
         
       - name: Get a version number
         run: | 
-          source app/version.py
+          source app/version.py >> $GITHUB_ENV 
           echo "Blurby version: $BLURBY_VERSION"
 
       - uses: mr-smithers-excellent/docker-build-push@v5
