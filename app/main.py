@@ -1,11 +1,11 @@
 from flask import Flask, render_template, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
-from version import version
+from version import BLURBY_VERSION
 import hashlib, time, logging, threading, sys, bleach, os
 
 # Define version and author
-__version__ = version
+__version__ = BLURBY_VERSION
 __author__ = 'Joni Turunen'
 
 # Read db_file from ENV variable
