@@ -43,6 +43,8 @@ Note the data folder requires a SQLlite database to be created, check [documenta
 - Possibility to create logfile entries
 - Better error handling
 - Add view history to entries
+- Better structure for the app (create_app())
+- Context upgrade to g or app_ctx
 
 ## Credits
 
