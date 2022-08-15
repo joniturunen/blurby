@@ -98,18 +98,19 @@ def read(sha_link):
         return render_template('read_link.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', retrieved_message=data.data, time=data.timestamp, sha_link=data.sha_link, ttl=data.timestamp+ttl, creator=data.creator, event_history=data.event_history)
     else:
         # return 404
-        return render_template('msg.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', msg_title='⚠ No message found!', msg='Message might be too old and deleted or it never existed\nCheck your link.')
+        logger.info(f'{request.headers.get("username")} requested a non-existent sha link') if request.headers.get("username") else logger.info(f'Anonymous requested a non-existent sha link')
+        return render_template('msg.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', msg_title='⚠ No message found!', msg='Message might be too old and deleted or it never existed. - Check your link.'), 404
 
 @app.route('/delete/<string:sha_link>')
 def delete(sha_link):
-    data_to_delete = Data.query.get_or_404(sha_link)
-    logger.info(f'{request.headers.get("username")} deleted a sha link') if request.headers.get("username") else logger.info(f'Anonymous deleted a sha link')
+    data_to_delete = Data.query.get(sha_link)
     try:
         db.session.delete(data_to_delete)
         db.session.commit()
+        logger.info(f'{request.headers.get("username")} deleted a sha link') if request.headers.get("username") else logger.info(f'Anonymous deleted a sha link')
         return render_template('msg.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', msg_title='👌 Message succesfully deleted!', msg='You can create a new secret!')
     except:
-        return render_template('msg.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', msg_titl='⚠ There was an error!', msg='Message was not deleted, maybe some one deleted it before you?')
+        return render_template('msg.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', msg_titl='⚠ There was an error!', msg='Message was not found - maybe it was already deleted?')
 
 @app.route('/find', methods=['POST', 'GET'])
 def find():
@@ -127,7 +128,7 @@ def find():
                 return render_template('msg.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', msg_title='⚠ Invalid link!', msg='The link you entered is not valid, please try again.')
         else:
             # Error message since the sha is not valid or not found
-            return render_template('msg.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', msg_title='⚠ There was an error!', msg='Check your SHA link and try again!')
+            return render_template('msg.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', msg_title='⚠ No message found!', msg='Message might be too old and deleted or it never existed. - Check your link.'), 404
     elif request.method == 'GET':
         return render_template('find.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous')
 
