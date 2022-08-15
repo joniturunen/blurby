@@ -13,6 +13,7 @@ db_file = os.getenv('BLURBY_DB_FILE', '/blurby/data/sqlite.db')
 ttl_hours = int(os.getenv('BLURBY_TTL_HOURS', '48'))
 threads = int(os.getenv('BLURBY_THREADS', '8'))
 host_ipaddr = os.getenv('BLURBY_HOST_IP', '0.0.0.0')
+cleanup_interval = int(os.getenv('BLURBY_CLEANUP_INTERVAL', 60))
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_file}'
@@ -30,39 +31,33 @@ logger = logging.getLogger(' Blurby ')
 # Generate timedelta object from given hours
 ttl = timedelta(hours=ttl_hours)
 
-
-
 class Data(db.Model):
     sha_link = db.Column(db.String(64), primary_key=True)
     data = db.Column(db.Text, nullable=False)
-    time_stamp = db.Column(db.DateTime, default=datetime.now)
-    # Static method that automatically returns time_stamp value plus ttl.
-    @staticmethod
-    def keep_until():
-        return datetime.now() + ttl
-    keep_until = db.Column(db.DateTime, default=keep_until)
+    timestamp = db.Column(db.DateTime, default=datetime.now)
     creator = db.Column(db.String(64), nullable=False)
     event_history = db.Column(db.Text)
+    blurby_version = db.Column(db.String(64), nullable=False, default=__version__)
 
     def __repr__(self):
         return '<Data %r>' % self.sha_link
 
 class CleanUpCrew():
     # remove data older than 48 hours
-    def __init__(self):
+    def __init__(self, ):
         # Define the interval in seconds for the clean_up function
-        self.interval = 60
+        self.interval = cleanup_interval
         thread = threading.Thread(target=self.clean_up, args=())
         thread.daemon = True
         thread.start()
     
     def clean_up(self):
         while True:
-            logger.info('Checking for old data entries...')
+            logger.info(f'Checking for older than \033[1m{datetime.now()-ttl}\033[0m data entries...')
             # if there are entries in the database that are older than 48 hours remove them
-            if Data.query.filter(Data.keep_until < datetime.now()).all():
-                logger.info(f'Found data entries that are older than {ttl}, deleting...')
-                Data.query.filter(Data.keep_until < datetime.now()).delete()
+            if Data.query.filter(Data.timestamp < datetime.now()-ttl).all():
+                logger.info(f'Found data entries that are older than \033[1m{datetime.now()-ttl}\033[0m, deleting...')
+                Data.query.filter(Data.timestamp < datetime.now()-ttl).delete()
                 db.session.commit()
                 # write log entry
                 logger.info(f'Cleaned up old data entries!')
@@ -84,6 +79,11 @@ def index():
             logger.info(f'{request.headers.get("username")} submitted a secret') if request.headers.get("username") else logger.info(f'Anonymous submitted a secret')
             return render_template('link.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', sha_link=sha_link, url=url)
         except:
+            # Write log entry and return error message from sqlalchemy
+            logger.error(f'⚠ Error adding new data entry to database! Action called by {request.headers.get("username") if request.headers.get("username") else "anonymous"}')
+            logger.error(f'{sys.exc_info()[0]}')
+            logger.error(f'{sys.exc_info()[1]}')
+            logger.error(f'statement error: {sys.exc_info()[0].__dict__}')
             return render_template('msg.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', msg_title='⚠ There was an error!', msg='There was a problem connecting the database')
     else:
         logger.info(f'{request.headers.get("username")} requested the default page') if request.headers.get("username") else logger.info(f'Anonymous requested the default page')
@@ -94,7 +94,7 @@ def index():
 def read(sha_link):
     data = Data.query.get_or_404(sha_link)
     logger.info(f'{request.headers.get("username")} requested a sha link') if request.headers.get("username") else logger.info(f'Anonymous requested a sha link')
-    return render_template('read_link.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', retrieved_message=data.data, time=data.time_stamp, sha_link=data.sha_link, ttl=data.keep_until, creator=data.creator, event_history=data.event_history)
+    return render_template('read_link.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', retrieved_message=data.data, time=data.timestamp, sha_link=data.sha_link, ttl=data.timestamp+ttl, creator=data.creator, event_history=data.event_history)
 
 @app.route('/delete/<string:sha_link>')
 def delete(sha_link):
@@ -150,7 +150,7 @@ def check_preconditions():
         # Try to create the database if failed log error and exit
         logger.info(f'Database file {db_file} not found, trying to create it...')
         try:
-            logger.info(f'Create the DB file {db_file}!')
+            logger.info(f'Created the DB file {db_file}!')
             db.create_all()
         except:
             logger.error(f"Could not create database URI {app.config['SQLALCHEMY_DATABASE_URI']}")
@@ -163,6 +163,7 @@ def check_preconditions():
                 \n{" "*42}- BLURBY_TTL_HOURS = {ttl_hours} \
                 \n{" "*42}- BLURBY_THREADS = {threads} \
                 \n{" "*42}- BLURBY_DB_FILE = {db_file} \
+                \n{" "*42}- BLURBY_CLEANUP_INTERVAL = {cleanup_interval} \
                 \033[0m')
 
 if __name__ == "__main__":
