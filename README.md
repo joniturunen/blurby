@@ -2,6 +2,7 @@
 
 Simple little Flask app that takes pastebin-like of data from user and stores it in a sqlite file.
 
+
 ## How-To
 
 Just run `python ./app/main.py` and head out to your browser with the url [http://127.0.0.1:5000](http://127.0.0.1:5000).
@@ -40,7 +41,7 @@ Note the data folder requires a SQLlite database to be created, check [documenta
 ## Todo
 
 - Possibility to create logfile entries
-- Experiment with redis or some other db
+- Better error handling
 - Add view history to entries
 
 ## Credits
