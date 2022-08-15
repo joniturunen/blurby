@@ -92,9 +92,13 @@ def index():
 
 @app.route('/link/<string:sha_link>')
 def read(sha_link):
-    data = Data.query.get_or_404(sha_link)
-    logger.info(f'{request.headers.get("username")} requested a sha link') if request.headers.get("username") else logger.info(f'Anonymous requested a sha link')
-    return render_template('read_link.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', retrieved_message=data.data, time=data.timestamp, sha_link=data.sha_link, ttl=data.timestamp+ttl, creator=data.creator, event_history=data.event_history)
+    data = Data.query.get(sha_link)
+    if data:
+        logger.info(f'{request.headers.get("username")} requested a sha link') if request.headers.get("username") else logger.info(f'Anonymous requested a sha link')
+        return render_template('read_link.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', retrieved_message=data.data, time=data.timestamp, sha_link=data.sha_link, ttl=data.timestamp+ttl, creator=data.creator, event_history=data.event_history)
+    else:
+        # return 404
+        return render_template('msg.html', username=request.headers.get('username') if request.headers.get('username') else 'anonymous', msg_title='⚠ No message found!', msg='Message might be too old and deleted or it never existed\nCheck your link.')
 
 @app.route('/delete/<string:sha_link>')
 def delete(sha_link):
