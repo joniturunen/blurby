@@ -1,6 +1,15 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import (
+    Blueprint,
+    Flask,
+    current_app,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
+from blurby.config import load_config
 from blurby.version import BLURBY_VERSION
 import hashlib, time, logging, threading, sys, os
 
@@ -8,28 +17,28 @@ import hashlib, time, logging, threading, sys, os
 __version__ = BLURBY_VERSION
 __author__ = "Joni Turunen"
 
-# Read db_file from ENV variable
-db_file = os.getenv("BLURBY_DB_FILE", "/blurby/data/sqlite.db")
-ttl_hours = int(os.getenv("BLURBY_TTL_HOURS", "48"))
-threads = int(os.getenv("BLURBY_THREADS", "8"))
-host_ipaddr = os.getenv("BLURBY_HOST_IP", "0.0.0.0")
-cleanup_interval = int(os.getenv("BLURBY_CLEANUP_INTERVAL", 60))
-
-app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_file}"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = SQLAlchemy(app)
-# logging conf
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("./blurby.log"), logging.StreamHandler(sys.stdout)],
-)
+db = SQLAlchemy()
+bp = Blueprint("blurby", __name__)
 logger = logging.getLogger(" Blurby ")
 
 
-# Generate timedelta object from given hours
-ttl = timedelta(hours=ttl_hours)
+def create_app(test_config=None):
+    """Create the Blurby app, configured from BLURBY_* environment variables.
+
+    `test_config` entries override the environment-derived settings.
+    """
+    app = Flask(__name__)
+    app.config.from_mapping(load_config(os.environ))
+    if test_config is not None:
+        app.config.from_mapping(test_config)
+    db.init_app(app)
+    app.register_blueprint(bp)
+    return app
+
+
+def secret_ttl():
+    """How long secrets are kept, from the app's BLURBY_TTL_HOURS setting."""
+    return timedelta(hours=current_app.config["BLURBY_TTL_HOURS"])
 
 
 class Data(db.Model):
@@ -45,30 +54,32 @@ class Data(db.Model):
 
 
 class CleanUpCrew:
-    # remove data older than 48 hours
-    def __init__(
-        self,
-    ):
+    """Background thread that removes data older than the TTL."""
+
+    def __init__(self, app):
+        self.app = app
         # Define the interval in seconds for the clean_up function
-        self.interval = cleanup_interval
+        self.interval = app.config["BLURBY_CLEANUP_INTERVAL"]
         thread = threading.Thread(target=self.clean_up, args=())
         thread.daemon = True
         thread.start()
 
     def clean_up(self):
         while True:
-            logger.info(
-                f"Checking for older than \033[1m{datetime.now() - ttl}\033[0m data entries..."
-            )
-            # if there are entries in the database that are older than 48 hours remove them
-            if Data.query.filter(Data.timestamp < datetime.now() - ttl).all():
+            with self.app.app_context():
+                ttl = secret_ttl()
                 logger.info(
-                    f"Found data entries that are older than \033[1m{datetime.now() - ttl}\033[0m, deleting..."
+                    f"Checking for older than \033[1m{datetime.now() - ttl}\033[0m data entries..."
                 )
-                Data.query.filter(Data.timestamp < datetime.now() - ttl).delete()
-                db.session.commit()
-                # write log entry
-                logger.info(f"Cleaned up old data entries!")
+                # if there are entries in the database that are older than the TTL remove them
+                if Data.query.filter(Data.timestamp < datetime.now() - ttl).all():
+                    logger.info(
+                        f"Found data entries that are older than \033[1m{datetime.now() - ttl}\033[0m, deleting..."
+                    )
+                    Data.query.filter(Data.timestamp < datetime.now() - ttl).delete()
+                    db.session.commit()
+                    # write log entry
+                    logger.info(f"Cleaned up old data entries!")
             time.sleep(self.interval)
 
 
@@ -77,7 +88,7 @@ def current_username():
     return request.headers.get("username") or "anonymous"
 
 
-@app.route("/", methods=["POST", "GET"])
+@bp.route("/", methods=["POST", "GET"])
 def index():
     if request.method == "POST":
         posted_data = request.form["data"]
@@ -119,7 +130,7 @@ def index():
         )
 
 
-@app.route("/link/<string:sha_link>")
+@bp.route("/link/<string:sha_link>")
 def read(sha_link):
     data = db.session.get(Data, sha_link)
     if data:
@@ -130,7 +141,7 @@ def read(sha_link):
             retrieved_message=data.data,
             time=data.timestamp,
             sha_link=data.sha_link,
-            ttl=data.timestamp + ttl,
+            ttl=data.timestamp + secret_ttl(),
             creator=data.creator,
             event_history=data.event_history,
         )
@@ -145,7 +156,7 @@ def read(sha_link):
         ), 404
 
 
-@app.route("/delete/<string:sha_link>")
+@bp.route("/delete/<string:sha_link>")
 def delete(sha_link):
     data_to_delete = db.session.get(Data, sha_link)
     try:
@@ -167,7 +178,7 @@ def delete(sha_link):
         )
 
 
-@app.route("/find", methods=["POST", "GET"])
+@bp.route("/find", methods=["POST", "GET"])
 def find():
     logger.info(f"{current_username()} requested to find a secret")
     if request.method == "POST":
@@ -177,7 +188,7 @@ def find():
             if sha_link.isalnum():
                 # url_for builds a same-site path and URL-quotes the value, so the
                 # input can't turn this into an open redirect.
-                return redirect(url_for("read", sha_link=sha_link))
+                return redirect(url_for(".read", sha_link=sha_link))
             else:
                 return render_template(
                     "msg.html",
@@ -201,22 +212,23 @@ def find():
 
 
 # Render About page
-@app.route("/about")
+@bp.route("/about")
 def about():
     logger.info(f"{current_username()} requested the about page")
     return render_template(
         "about.html",
         username=current_username(),
-        ttl=ttl,
+        ttl=secret_ttl(),
         version=__version__,
         author=__author__,
-        db_conf=str(app.config["SQLALCHEMY_DATABASE_URI"]),
+        db_conf=str(current_app.config["SQLALCHEMY_DATABASE_URI"]),
         request_headers=request.headers,
     )
 
 
 # Function to check preconditions for database file creation
-def check_preconditions():
+def check_preconditions(app):
+    db_file = app.config["BLURBY_DB_FILE"]
     # Check if database file exists
     logger.info(f"Checking if database file {db_file} exists...")
     # Check if filepath is valid path
@@ -233,7 +245,8 @@ def check_preconditions():
         logger.info(f"Database file {db_file} not found, trying to create it...")
         try:
             logger.info(f"Created the DB file {db_file}!")
-            db.create_all()
+            with app.app_context():
+                db.create_all()
         except:
             logger.error(
                 f"Could not create database URI {app.config['SQLALCHEMY_DATABASE_URI']}"
@@ -245,23 +258,34 @@ def check_preconditions():
         logger.info(f"Database file: {db_file} found!")
     logger.info(
         f"\033[1mPreconditions check passed with following env values\033[0m:\033[1;32m \
-                \n{' ' * 42}- BLURBY_TTL_HOURS = {ttl_hours} \
-                \n{' ' * 42}- BLURBY_THREADS = {threads} \
+                \n{' ' * 42}- BLURBY_TTL_HOURS = {app.config['BLURBY_TTL_HOURS']} \
+                \n{' ' * 42}- BLURBY_THREADS = {app.config['BLURBY_THREADS']} \
                 \n{' ' * 42}- BLURBY_DB_FILE = {db_file} \
-                \n{' ' * 42}- BLURBY_CLEANUP_INTERVAL = {cleanup_interval} \
+                \n{' ' * 42}- BLURBY_CLEANUP_INTERVAL = {app.config['BLURBY_CLEANUP_INTERVAL']} \
                 \033[0m"
     )
 
 
-if __name__ == "__main__":
+def main():
+    """Run Blurby: waitress on port 8080, or the Flask debug server with --debug."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[
+            logging.FileHandler("./blurby.log"),
+            logging.StreamHandler(sys.stdout),
+        ],
+    )
+    app = create_app()
+    host_ipaddr = app.config["BLURBY_HOST_IP"]
     # Echo the start of program to logger in color
     logger.info(f"\033[1;32m{'-' * 30}\033[0m")
     logger.info(f"\033[1m\033[1;32mStarting Blurby v{__version__}\033[0m")
     logger.info(f"\033[1;32m{'-' * 30}\033[0m")
     # Call check_preconditions function to check if database file exists
-    check_preconditions()
+    check_preconditions(app)
     # Start clean_up crew process in background
-    cc = CleanUpCrew()
+    CleanUpCrew(app)
     # If commandline argument --debug is used, run the app in debug mode
     if len(sys.argv) > 1 and sys.argv[1] == "--debug":
         # deepcode ignore RunWithDebugTrue: <please specify a reason of ignoring this>
@@ -270,4 +294,8 @@ if __name__ == "__main__":
     else:
         from waitress import serve
 
-        serve(app, host=host_ipaddr, port=8080, threads=threads)
+        serve(app, host=host_ipaddr, port=8080, threads=app.config["BLURBY_THREADS"])
+
+
+if __name__ == "__main__":
+    main()

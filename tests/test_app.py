@@ -1,14 +1,20 @@
 import unittest, random
-from blurby.main import app, db, Data, __version__
+from blurby.main import create_app, db, Data, __version__
 from flask import current_app
 
 
 class TestBase(unittest.TestCase):
     def setUp(self):
-        app.config["TESTING"] = True
-        app.config["WTF_CSRF_ENABLED"] = False
-        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
-        self.app = app.test_client()
+        self.flask_app = create_app(
+            {
+                "TESTING": True,
+                "WTF_CSRF_ENABLED": False,
+                "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+            }
+        )
+        self.app = self.flask_app.test_client()
+        self.app_context = self.flask_app.app_context()
+        self.app_context.push()
         db.create_all()
         self.sample_data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.\nDonec euismod, nisi eu consectetur consectetur, nisi nisi\n        consectetur nisi, euismod nisi nisi euismod nisi."
         self.sample_sha = (
@@ -24,6 +30,7 @@ class TestBase(unittest.TestCase):
     def tearDown(self):
         db.session.remove()
         db.drop_all()
+        self.app_context.pop()
 
     def test_db_entry_is_created(self):
         self.assertEqual(Data.query.count(), 1)

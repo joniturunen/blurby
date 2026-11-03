@@ -1,9 +1,10 @@
-from blurby.main import db
+from blurby.main import create_app, db
 
 
 def setup_database():
     try:
-        db.create_all()
+        with create_app().app_context():
+            db.create_all()
         print("Database created!")
     except:
         print(
