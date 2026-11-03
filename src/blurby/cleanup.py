@@ -28,9 +28,16 @@ def delete_expired():
 
 
 def clean_up_once(app):
-    """Run one cleanup pass in an application context of `app`."""
-    with app.app_context():
-        delete_expired()
+    """Run one cleanup pass in an application context of `app`.
+
+    Errors are logged, not raised: an exception escaping a pass would end the
+    background thread, and expired secrets would never be deleted again.
+    """
+    try:
+        with app.app_context():
+            delete_expired()
+    except Exception:
+        logger.exception("Cleaning up expired secrets failed, retrying next pass")
 
 
 class CleanUpCrew:

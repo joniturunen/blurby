@@ -1,5 +1,8 @@
+import logging
 import threading
 from datetime import datetime, timedelta
+
+import sqlalchemy as sa
 
 from blurby.cleanup import CleanUpCrew, clean_up_once, delete_expired
 from blurby.models import Data, db
@@ -55,6 +58,21 @@ def test_clean_up_once_pushes_its_own_app_context(app):
     worker.join(timeout=5)
 
     assert stored_links() == []
+
+
+def test_clean_up_once_logs_a_database_error_instead_of_raising(
+    app, monkeypatch, caplog
+):
+    # An exception escaping a pass would end the cleanup thread for good.
+    def locked():
+        raise sa.exc.OperationalError("DELETE", {}, Exception("database is locked"))
+
+    monkeypatch.setattr("blurby.cleanup.delete_expired", locked)
+
+    with caplog.at_level(logging.ERROR, logger="blurby.cleanup"):
+        clean_up_once(app)
+
+    assert "database is locked" in caplog.text
 
 
 def test_clean_up_crew_runs_cleanup_passes_in_a_background_thread(app, monkeypatch):
