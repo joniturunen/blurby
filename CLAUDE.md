@@ -12,8 +12,8 @@ Blurby is a small Flask app for sharing pastebin-style "secrets": a user posts t
 uv sync    # create .venv from uv.lock (runtime + dev deps; installs blurby in editable mode)
 
 # Run locally. The default DB path /blurby/data/sqlite.db won't exist outside Docker, so set it explicitly
-BLURBY_DB_FILE=$PWD/data/sqlite.db uv run python -m blurby.main --debug   # Flask dev server on :5000
-BLURBY_DB_FILE=$PWD/data/sqlite.db uv run python -m blurby.main           # waitress on :8080 (production mode)
+BLURBY_DB_FILE=$PWD/data/sqlite.db uv run blurby --debug   # Flask dev server on :5000
+BLURBY_DB_FILE=$PWD/data/sqlite.db uv run blurby           # waitress on :8080 (production mode; also `python -m blurby`)
 
 # Tests (pytest, unittest-style tests in tests/, in-memory SQLite)
 uv run pytest
@@ -39,7 +39,7 @@ The upper bounds in `pyproject.toml` (Flask/Werkzeug <2.3, Flask-SQLAlchemy <3, 
 - **Modules.** `__init__.py` (`create_app`, `__version__`), `config.py` (env vars, `secret_ttl()`), `models.py` (`db`, the `Data` model), `views.py` (routes and the `current_username()` helper), `cleanup.py` (`CleanUpCrew`), and `main.py` (startup checks and `main()`). `setup_database.py` creates the schema by hand.
 - **App factory.** `create_app(test_config=None)` builds the app. `db` (Flask-SQLAlchemy) is created unbound and attached with `init_app`, and the routes live on the `blurby` Blueprint, so `url_for` takes `.read` or `blurby.read`. Code that touches the DB outside a request (cleanup thread, startup checks, `setup_database`, tests) must push `app.app_context()`. Importing the module has no side effects.
 - **Configuration.** `config.load_config(environ)` maps the `BLURBY_*` env vars to Flask config keys of the same name: `BLURBY_DB_FILE`, `BLURBY_TTL_HOURS`, `BLURBY_THREADS`, `BLURBY_HOST_IP`, and `BLURBY_CLEANUP_INTERVAL` (seconds between cleanup passes; not listed in the README). It also derives `SQLALCHEMY_DATABASE_URI`. Code reads these from `current_app.config`, and `secret_ttl()` returns the TTL as a `timedelta`. Tests override settings through `create_app({...})`.
-- **Startup (`blurby.main:main`).** `main()` configures logging (stdout plus a `FileHandler('./blurby.log')` in the current working directory) and creates the app. `check_preconditions(app)` exits the process if the DB file's directory doesn't exist or the path doesn't end in `.db`, and runs `db.create_all()` if the file is missing. Then `CleanUpCrew(app)` starts a daemon thread that deletes rows older than the TTL in a loop. `--debug` chooses the Flask dev server on port 5000; otherwise waitress serves on port 8080.
+- **Startup (`blurby.main:main`, the `blurby` console script).** `main()` configures logging (stdout plus a `FileHandler('./blurby.log')` in the current working directory) and creates the app. `check_preconditions(app)` exits the process if the DB file's directory doesn't exist or the path doesn't end in `.db`, and runs `db.create_all()` if the file is missing. Then `CleanUpCrew(app)` starts a daemon thread that deletes rows older than the TTL in a loop. `--debug` chooses the Flask dev server on port 5000; otherwise waitress serves on port 8080.
 - **Links.** On `POST /`, `sha_link = sha256(data + str(time.time()))`, and the row's primary key is that hex digest. `/link/<sha>` reads a secret, `/delete/<sha>` deletes it (a plain GET), and `/find` checks that the input is 64 alphanumeric characters before redirecting to `/link/<sha>`.
 - **Identity.** The app has no auth of its own. The "user" is whatever value the `username` request header carries (presumably set by an upstream auth proxy), falling back to `anonymous`. Every route passes `username` into its template, and it is saved as `Data.creator`.
 - **Templates.** Every page extends `templates/base_structure.html` and fills the blocks `intro`, `header`, `main`, and `footer`. `msg.html` is the generic message/error page (`msg_title`, `msg`).
@@ -47,7 +47,7 @@ The upper bounds in `pyproject.toml` (Flask/Werkzeug <2.3, Flask-SQLAlchemy <3, 
 
 ## Docker image
 
-The image builds in `/build` and installs the locked runtime dependencies plus the non-editable `blurby` package into `/opt/venv`. It runs `python -m blurby.main` from `/blurby`, the runtime directory: the log file is written there and `/blurby/data` is the volume for the SQLite DB. Keep the deployment interface stable: port 8080, the `/blurby/data` volume, the `BLURBY_*` env vars, the link format, and the DB schema.
+The image builds in `/build` and installs the locked runtime dependencies plus the non-editable `blurby` package into `/opt/venv`. It runs the `blurby` console script from `/blurby`, the runtime directory: the log file is written there and `/blurby/data` is the volume for the SQLite DB. Keep the deployment interface stable: port 8080, the `/blurby/data` volume, the `BLURBY_*` env vars, the link format, and the DB schema.
 
 ## Conventions
 

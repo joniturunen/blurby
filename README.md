@@ -5,7 +5,7 @@ Simple little Flask app that takes pastebin-like of data from user and stores it
 
 ## How-To
 
-Install the dependencies with [uv](https://docs.astral.sh/uv/) (`uv sync`), then just run `uv run python -m blurby.main` and head out to your browser with the url [http://127.0.0.1:5000](http://127.0.0.1:5000).
+Install the dependencies with [uv](https://docs.astral.sh/uv/) (`uv sync`), then just run `uv run blurby --debug` and head out to your browser with the url [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
 Check the Using Docker section for more info.
 

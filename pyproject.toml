@@ -16,6 +16,9 @@ dependencies = [
     "werkzeug>=2.2,<2.3",
 ]
 
+[project.scripts]
+blurby = "blurby.main:main"
+
 [dependency-groups]
 dev = [
     "pytest>=8.4.2",
