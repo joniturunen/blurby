@@ -29,9 +29,9 @@ def check_preconditions(app):
         # Try to create the database if failed log error and exit
         logger.info(f"Database file {db_file} not found, trying to create it...")
         try:
-            logger.info(f"Created the DB file {db_file}!")
             with app.app_context():
                 db.create_all()
+            logger.info(f"Created the DB file {db_file}!")
         except Exception:
             logger.error(
                 f"Could not create database URI {app.config['SQLALCHEMY_DATABASE_URI']}"

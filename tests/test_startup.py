@@ -67,6 +67,26 @@ def test_exits_when_the_db_cannot_be_created(make_file_app, tmp_path, monkeypatc
     assert excinfo.value.code == 1
 
 
+def test_reports_a_created_db_only_after_creating_it(
+    make_file_app, tmp_path, monkeypatch, caplog
+):
+    app = make_file_app(tmp_path / "sqlite.db")
+
+    def fail(*args, **kwargs):
+        raise sa.exc.OperationalError("CREATE TABLE", {}, Exception("read-only"))
+
+    monkeypatch.setattr(db, "create_all", fail)
+
+    with (
+        caplog.at_level(logging.INFO, logger="blurby.main"),
+        pytest.raises(SystemExit),
+    ):
+        check_preconditions(app)
+
+    assert "Created the DB file" not in caplog.text
+    assert "Could not create database" in caplog.text
+
+
 # main()
 
 
