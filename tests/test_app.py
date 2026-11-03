@@ -1,7 +1,7 @@
-import unittest, random
+import unittest
+import random
 from blurby import __version__, create_app
 from blurby.models import Data, db
-from flask import current_app
 
 
 class TestBase(unittest.TestCase):

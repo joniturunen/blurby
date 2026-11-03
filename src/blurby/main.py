@@ -32,7 +32,7 @@ def check_preconditions(app):
             logger.info(f"Created the DB file {db_file}!")
             with app.app_context():
                 db.create_all()
-        except:
+        except Exception:
             logger.error(
                 f"Could not create database URI {app.config['SQLALCHEMY_DATABASE_URI']}"
             )

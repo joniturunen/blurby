@@ -37,5 +37,5 @@ class CleanUpCrew:
                     Data.query.filter(Data.timestamp < datetime.now() - ttl).delete()
                     db.session.commit()
                     # write log entry
-                    logger.info(f"Cleaned up old data entries!")
+                    logger.info("Cleaned up old data entries!")
             time.sleep(self.interval)

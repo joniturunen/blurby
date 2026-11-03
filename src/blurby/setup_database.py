@@ -7,10 +7,8 @@ def setup_database():
         with create_app().app_context():
             db.create_all()
         print("Database created!")
-    except:
-        print(
-            f"Can't create database, maybe it already exists or path is not writable?"
-        )
+    except Exception:
+        print("Can't create database, maybe it already exists or path is not writable?")
 
 
 if __name__ == "__main__":

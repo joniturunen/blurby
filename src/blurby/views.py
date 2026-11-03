@@ -40,7 +40,7 @@ def index():
                 sha_link=sha_link,
                 url=url,
             )
-        except:
+        except Exception:
             # Write log entry and return error message from sqlalchemy
             logger.error(
                 f"⚠ Error adding new data entry to database! Action called by {current_username()}"
@@ -101,7 +101,7 @@ def delete(sha_link):
             msg_title="👌 Message succesfully deleted!",
             msg="You can create a new secret!",
         )
-    except:
+    except Exception:
         return render_template(
             "msg.html",
             username=current_username(),
