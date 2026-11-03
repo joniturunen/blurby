@@ -133,6 +133,16 @@ class TestBase(unittest.TestCase):
         self.assertIn("There was an error!", body)
         self.assertIn("Message was not found", body)
 
+    def test_a_database_error_while_deleting_shows_an_error_page(self):
+        failing_commit = mock.patch.object(
+            db.session, "commit", side_effect=SQLAlchemyError("disk I/O error")
+        )
+        with failing_commit:
+            response = self.app.get(f"/delete/{self.sample_sha}")
+        body = response.get_data(as_text=True)
+        self.assertIn("There was an error!", body)
+        self.assertNotIn("succesfully deleted", body)
+
     def test_viewing_a_secret_shows_its_content_and_creator(self):
         body = self.app.get(f"/link/{self.sample_sha}").get_data(as_text=True)
         self.assertIn("Lorem ipsum dolor sit amet", body)
