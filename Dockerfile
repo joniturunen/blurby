@@ -18,14 +18,21 @@ ENV UV_PROJECT_ENVIRONMENT=/opt/venv \
     UV_NO_CACHE=1
 ENV PATH="/opt/venv/bin:$PATH"
 
-WORKDIR /blurby
+WORKDIR /build
 
 # Install the locked dependencies before copying the app so this layer is
 # cached across code changes
 COPY pyproject.toml uv.lock ./
 RUN uv sync --locked --no-dev --no-install-project
 
-COPY ./app /blurby
+# Install the blurby package itself (non-editable, so /opt/venv is self-contained)
+COPY src ./src
+RUN uv sync --locked --no-dev --no-editable
+
+# /blurby is the runtime directory: the log file is written here and the
+# default database lives in /blurby/data
+WORKDIR /blurby
+RUN mkdir -p /blurby/data/logs
 
 # Define volumes
 VOLUME /blurby/data/
@@ -40,4 +47,4 @@ RUN chown -R appuser /blurby/data
 USER appuser
 
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
-CMD ["python", "main.py"]
+CMD ["python", "-m", "blurby.main"]

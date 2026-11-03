@@ -5,7 +5,7 @@ Simple little Flask app that takes pastebin-like of data from user and stores it
 
 ## How-To
 
-Install the dependencies with [uv](https://docs.astral.sh/uv/) (`uv sync`), then just run `uv run python ./app/main.py` and head out to your browser with the url [http://127.0.0.1:5000](http://127.0.0.1:5000).
+Install the dependencies with [uv](https://docs.astral.sh/uv/) (`uv sync`), then just run `uv run python -m blurby.main` and head out to your browser with the url [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
 Check the Using Docker section for more info.
 
@@ -27,7 +27,7 @@ When run from the command line, the following *additional* parameters are availa
 
 The application now checks if a `BLURBY_DB_FILE` environment variable is set. If it is, it uses that as a DB file. If the file is missing but the path is valid it creates the db file.
 
-Manually: To create a blank Sqlite DB for the app use the `uv run python ./app/setup_database.py` command.
+Manually: To create a blank Sqlite DB for the app use the `uv run python -m blurby.setup_database` command.
 
 ## Using docker
 

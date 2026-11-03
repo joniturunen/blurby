@@ -1,4 +1,4 @@
-from main import db
+from blurby.main import db
 
 
 def setup_database():

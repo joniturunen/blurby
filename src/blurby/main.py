@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
-from version import BLURBY_VERSION
+from blurby.version import BLURBY_VERSION
 import hashlib, time, logging, threading, sys, bleach, os
 
 # Define version and author
