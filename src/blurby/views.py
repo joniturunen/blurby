@@ -1,8 +1,7 @@
 """HTTP routes, registered on the "blurby" blueprint."""
 
-import hashlib
 import logging
-import time
+import secrets
 from datetime import datetime
 
 from flask import Blueprint, current_app, redirect, render_template, request, url_for
@@ -28,9 +27,8 @@ def index():
         # clients that don't (curl, scripts).
         origin = request.headers.get("Origin")
         url = f"{origin}/" if origin else request.host_url
-        salty_data = posted_data + str(time.time())
-        sha = hashlib.sha256(salty_data.encode())
-        sha_link = sha.hexdigest()
+        # 256 random bits, as 64 hex characters: the same format as before
+        sha_link = secrets.token_hex(32)
         creator = current_username()
         new_data = Data(data=posted_data, sha_link=sha_link, creator=creator)
         try:

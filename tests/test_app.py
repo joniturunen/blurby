@@ -98,6 +98,15 @@ class TestBase(unittest.TestCase):
         sha = Data.query.filter_by(data="no origin").one().sha_link
         self.assertIn(f"http://localhost/link/{sha}", response.get_data(as_text=True))
 
+    def test_identical_secrets_posted_at_the_same_instant_get_distinct_links(self):
+        # Links must not be derived from the content and the clock.
+        with mock.patch("time.time", return_value=1_700_000_000.0):
+            first = self.app.post("/", data={"data": "same"}, headers=self.ORIGIN)
+            second = self.app.post("/", data={"data": "same"}, headers=self.ORIGIN)
+        self.assertIn("/link/", first.get_data(as_text=True))
+        self.assertIn("/link/", second.get_data(as_text=True))
+        self.assertEqual(Data.query.filter_by(data="same").count(), 2)
+
     def test_posting_a_secret_records_the_username_header_as_creator(self):
         response = self.app.post(
             "/",
