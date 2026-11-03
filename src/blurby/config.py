@@ -1,5 +1,9 @@
 """Application configuration, read from BLURBY_* environment variables."""
 
+from datetime import timedelta
+
+from flask import current_app
+
 DEFAULT_DB_FILE = "/blurby/data/sqlite.db"
 
 
@@ -15,3 +19,8 @@ def load_config(environ):
         "SQLALCHEMY_DATABASE_URI": f"sqlite:///{db_file}",
         "SQLALCHEMY_TRACK_MODIFICATIONS": False,
     }
+
+
+def secret_ttl():
+    """How long secrets are kept, from the app's BLURBY_TTL_HOURS setting."""
+    return timedelta(hours=current_app.config["BLURBY_TTL_HOURS"])

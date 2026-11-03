@@ -1,4 +1,5 @@
-from blurby.main import create_app, db
+from blurby import create_app
+from blurby.models import db
 
 
 def setup_database():

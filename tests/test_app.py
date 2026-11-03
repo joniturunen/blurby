@@ -1,5 +1,6 @@
 import unittest, random
-from blurby.main import create_app, db, Data, __version__
+from blurby import __version__, create_app
+from blurby.models import Data, db
 from flask import current_app
 
 
