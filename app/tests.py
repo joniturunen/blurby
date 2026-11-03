@@ -73,6 +73,74 @@ class TestBase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Data.query.count(), 0)
 
+    # Characterization tests: pin down current behaviour before refactoring.
+
+    ORIGIN = {"Origin": "http://blurby.test"}
+
+    def test_posting_a_secret_stores_it_and_shows_its_link(self):
+        response = self.app.post("/", data={"data": "top secret"}, headers=self.ORIGIN)
+        self.assertEqual(response.status_code, 200)
+        stored = Data.query.filter_by(data="top secret").one()
+        self.assertRegex(stored.sha_link, r"^[0-9a-f]{64}$")
+        self.assertEqual(stored.creator, "anonymous")
+        self.assertIn(
+            f"http://blurby.test/link/{stored.sha_link}",
+            response.get_data(as_text=True),
+        )
+
+    def test_posting_a_secret_records_the_username_header_as_creator(self):
+        response = self.app.post(
+            "/",
+            data={"data": "from alice"},
+            headers={**self.ORIGIN, "username": "alice"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Data.query.filter_by(data="from alice").one().creator, "alice")
+
+    def test_viewing_a_secret_shows_its_content_and_creator(self):
+        body = self.app.get(f"/link/{self.sample_sha}").get_data(as_text=True)
+        self.assertIn("Lorem ipsum dolor sit amet", body)
+        self.assertIn(self.sample_creator, body)
+
+    def test_secret_content_is_html_escaped(self):
+        payload = "<script>alert(1)</script>"
+        self.app.post("/", data={"data": payload}, headers=self.ORIGIN)
+        sha = Data.query.filter_by(data=payload).one().sha_link
+        body = self.app.get(f"/link/{sha}").get_data(as_text=True)
+        self.assertNotIn(payload, body)
+        self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", body)
+
+    def test_viewing_an_unknown_link_returns_404(self):
+        response = self.app.get("/link/" + "0" * 64)
+        self.assertEqual(response.status_code, 404)
+
+    def test_find_redirects_a_valid_sha_to_its_link(self):
+        response = self.app.post("/find", data={"sha_link": self.sample_sha})
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            response.headers["Location"].endswith(f"/link/{self.sample_sha}")
+        )
+
+    def test_find_rejects_a_non_alphanumeric_sha(self):
+        response = self.app.post("/find", data={"sha_link": "../" + "a" * 61})
+        self.assertIn("Invalid link", response.get_data(as_text=True))
+
+    def test_find_with_a_wrong_length_sha_returns_404(self):
+        response = self.app.post("/find", data={"sha_link": "abc123"})
+        self.assertEqual(response.status_code, 404)
+
+    def test_about_page_shows_the_version(self):
+        body = self.app.get("/about").get_data(as_text=True)
+        self.assertIn(__version__, body)
+
+    def test_pages_greet_the_username_header_or_anonymous(self):
+        for path in ("/", "/find", "/about", f"/link/{self.sample_sha}"):
+            with self.subTest(path=path):
+                anonymous = self.app.get(path).get_data(as_text=True)
+                named = self.app.get(path, headers={"username": "alice"})
+                self.assertIn("🤫 anonymous", anonymous)
+                self.assertIn("🤫 alice", named.get_data(as_text=True))
+
 
 if __name__ == "__main__":
     unittest.main()
