@@ -20,7 +20,14 @@ dependencies = [
 [dependency-groups]
 dev = [
     "flake8",
+    "pytest>=8.4.2",
 ]
 
 [tool.uv]
 package = false
+
+[tool.pytest.ini_options]
+# The app modules import each other as top-level modules (`from main import ...`).
+pythonpath = ["app"]
+testpaths = ["app"]
+python_files = ["tests.py"]

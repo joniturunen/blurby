@@ -8,7 +8,7 @@ Blurby is a small Flask app for sharing pastebin-style "secrets": a user posts t
 
 ## Commands
 
-All Python code imports siblings as top-level modules (`from main import ...`, `from version import ...`), so `app/` must be the import root. Either run scripts by path (`python app/tests.py`) or `cd app` first.
+All Python code imports siblings as top-level modules (`from main import ...`, `from version import ...`), so `app/` must be the import root. pytest handles this through `pythonpath` in `pyproject.toml`. For scripts, run them by path (`uv run python app/main.py`) or `cd app` first.
 
 ```bash
 uv sync    # create .venv from uv.lock (runtime + dev dependencies)
@@ -17,9 +17,9 @@ uv sync    # create .venv from uv.lock (runtime + dev dependencies)
 BLURBY_DB_FILE=$PWD/data/sqlite.db uv run python app/main.py --debug   # Flask dev server on :5000
 BLURBY_DB_FILE=$PWD/data/sqlite.db uv run python app/main.py           # waitress on :8080 (production mode)
 
-# Tests (unittest, in-memory SQLite)
-uv run python app/tests.py
-cd app && uv run python -m unittest tests.TestBase.test_viewing_a_shalink   # single test
+# Tests (pytest runs the unittest-style tests in app/tests.py against in-memory SQLite)
+uv run pytest
+uv run pytest app/tests.py::TestBase::test_viewing_a_shalink   # single test
 
 # Lint (same as CI; only the first command fails the build)
 uv run flake8 . --extend-exclude .venv --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -50,6 +50,6 @@ Moving to Flask-SQLAlchemy 3 means wrapping those call sites in `app.app_context
 ## Versioning and CI
 
 - `app/version.py` contains exactly `BLURBY_VERSION='x.y.z.w'`. Bump it with each change; past PRs do so. The Docker workflow runs `source app/version.py` in bash, so the file must stay valid shell (no spaces around `=`). The version is also stored on every row (`Data.blurby_version`) and shown on `/about`.
-- `.github/workflows/python-app.yml` (push/PR to `main`) runs `uv sync --locked`, flake8, and then `uv run python app/tests.py` on Python 3.10.
+- `.github/workflows/python-app.yml` (push/PR to `main`) runs `uv sync --locked`, flake8, and then `uv run pytest` on Python 3.10.
 - `.github/workflows/docker_build_push.yml` (push to `main`) builds the image and pushes it to Docker Hub as `joniturunen/blurby:<BLURBY_VERSION>` and `:latest`. The image uses Python 3.9, installs the locked runtime dependencies into `/opt/venv`, and copies `app/` to `/blurby`.
 - `pyproject.toml` has a `version` field because uv requires one. Keep it in sync with `app/version.py` until the version moves to `pyproject.toml` alone.
