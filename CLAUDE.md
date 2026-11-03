@@ -56,7 +56,6 @@ The image builds in `/build` and installs the locked runtime dependencies plus t
 
 ## Versioning and CI
 
-- `src/blurby/version.py` contains exactly `BLURBY_VERSION='...'`. The Docker workflow runs `source src/blurby/version.py` in bash, so the file must stay valid shell (no spaces around `=`), and it is excluded from `ruff format`. The version is also stored on every row (`Data.blurby_version`) and shown on `/about`.
-- `pyproject.toml` has a `version` field because uv requires one. Keep it in sync with `src/blurby/version.py`.
+- The version lives only in `pyproject.toml`. `blurby.version.BLURBY_VERSION` reads it from the installed package metadata, so run `uv sync` after changing it. The Docker publish workflow reads it from `pyproject.toml` with `tomllib`. The version is also stored on every row (`Data.blurby_version`) and shown on `/about`.
 - `.github/workflows/python-app.yml` (push/PR to `main`) runs `uv sync --locked`, `ruff check`, `ruff format --check`, and then `uv run pytest --cov` on Python 3.14.
 - `.github/workflows/docker_build_push.yml` (push to `main`) builds the image and pushes it to Docker Hub as `joniturunen/blurby:<BLURBY_VERSION>` and `:latest`. The image is based on `python:3.14-slim-trixie`.

@@ -1,1 +1,5 @@
-BLURBY_VERSION='0.1.7.6'
+"""The installed package version. The single source is pyproject.toml."""
+
+from importlib.metadata import version
+
+BLURBY_VERSION = version("blurby")

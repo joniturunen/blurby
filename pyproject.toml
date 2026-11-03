@@ -1,6 +1,7 @@
 [project]
 name = "blurby"
-# Keep in sync with src/blurby/version.py, which the app and Docker workflow read.
+# The single source of the version: the app reads it from the installed package
+# metadata and the Docker publish workflow from this file.
 version = "0.1.7.6"
 description = "A small Flask app for sharing short-lived secrets via SHA-256 links."
 requires-python = ">=3.14"
@@ -34,11 +35,6 @@ filterwarnings = ["error"]
 # Same blocking checks the flake8 CI gate used: syntax errors, invalid
 # comparisons/prints, statement errors and undefined names.
 select = ["E9", "F63", "F7", "F82"]
-
-[tool.ruff.format]
-# The Docker publish workflow `source`s src/blurby/version.py, so the file must
-# stay valid shell syntax (no spaces around `=`).
-exclude = ["src/blurby/version.py"]
 
 [tool.coverage.run]
 source_pkgs = ["blurby"]
