@@ -17,10 +17,11 @@ Configuration is done via environment variables. The following are the available
     - `BLURBY_HOST_IP`: Host to bind the server to. (defaults to `0.0.0.0`)
     - `BLURBY_TTL_HOURS`: How long to keep a paste in the database. (defaults to `48`)
     - `BLURBY_THREADS`: Number of threads to use for processing. (defaults to `8`)
+    - `BLURBY_CLEANUP_INTERVAL`: Seconds between passes that delete expired pastes. (defaults to `60`)
 
-When run from the command line, the following *additional* parameters are available:
+`uv run blurby` serves the app with waitress on port `8080`. When run from the command line, the following *additional* parameters are available:
 
-    - `--debug`: Run in debug mode.
+    - `--debug`: Run the Flask debug server on port `5000` instead. (On macOS, the AirPlay Receiver may already be using port 5000.)
 
 
 ### Initializing database
@@ -31,20 +32,18 @@ Manually: To create a blank Sqlite DB for the app use the `uv run python -m blur
 
 ## Using docker
 
-To use docker simply run the container with prefered volume maps. 
+To use docker simply run the container with prefered volume maps. The container serves on port `8080` and keeps the SQLite database in `/blurby/data`.
 
 ex. 
-`docker container run -v /some/path/logs:/data/logs -v /your/path/data:/data joniturunen/blurby`
+`docker container run -p 8080:8080 -v /your/path/data:/blurby/data joniturunen/blurby`
 
-Note the data folder requires a SQLlite database to be created, check [documentation for setting up SQLite](#initializing-database).
+The database file is created on first start if it's missing (see [Initializing database](#initializing-database)). The mounted folder must be writable by the container's `appuser` (UID 5678). Logs go to the container's stdout (`docker logs`).
 
 ## Todo
 
 - Possibility to create logfile entries
 - Better error handling
 - Add view history to entries
-- Better structure for the app (create_app())
-- Context upgrade to g or app_ctx
 
 ## Credits
 
@@ -55,8 +54,8 @@ Icons:
 
 Other:
 - [jQuery](http://jquery.com)
-- [Scrollex](github.com/ajlkn/jquery.scrollex)
-- [Responsive Tools](github.com/ajlkn/responsive-tools)
+- [Scrollex](https://github.com/ajlkn/jquery.scrollex)
+- [Responsive Tools](https://github.com/ajlkn/responsive-tools)
 
 Theme:
 Massively by HTML5 UP
