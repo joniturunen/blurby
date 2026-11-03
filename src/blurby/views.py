@@ -143,7 +143,7 @@ def find():
                 msg_title="⚠ No message found!",
                 msg="Message might be too old and deleted or it never existed. - Check your link.",
             ), 404
-    elif request.method == "GET":
+    else:
         return render_template(
             "find.html",
             username=current_username(),
