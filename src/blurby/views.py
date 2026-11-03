@@ -12,7 +12,7 @@ from blurby.models import Data, db
 from blurby.version import BLURBY_VERSION
 
 bp = Blueprint("blurby", __name__)
-logger = logging.getLogger(" Blurby ")
+logger = logging.getLogger(__name__)
 
 
 def current_username():

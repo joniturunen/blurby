@@ -8,7 +8,7 @@ from datetime import datetime
 from blurby.config import secret_ttl
 from blurby.models import Data, db
 
-logger = logging.getLogger(" Blurby ")
+logger = logging.getLogger(__name__)
 
 
 class CleanUpCrew:

@@ -8,7 +8,7 @@ from blurby import __version__, create_app
 from blurby.cleanup import CleanUpCrew
 from blurby.models import db
 
-logger = logging.getLogger(" Blurby ")
+logger = logging.getLogger(__name__)
 
 
 # Function to check preconditions for database file creation
