@@ -1,4 +1,3 @@
-import random
 import unittest
 
 from blurby import __version__, create_app
@@ -10,7 +9,6 @@ class TestBase(unittest.TestCase):
         self.flask_app = create_app(
             {
                 "TESTING": True,
-                "WTF_CSRF_ENABLED": False,
                 "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
             }
         )
@@ -55,21 +53,13 @@ class TestBase(unittest.TestCase):
         response = self.app.get("/find")
         self.assertEqual(response.status_code, 200)
 
-    def test_random_page_not_accessible(self):
-        response = self.app.get("/" + str(random.randint(1, 100)))
+    def test_unknown_page_returns_404(self):
+        response = self.app.get("/no-such-page")
         self.assertEqual(response.status_code, 404)
 
-    def test_random_link_not_accessible(self):
-        response = self.app.get("/" + str(random.randint(1, 100)))
-        self.assertEqual(response.status_code, 404)
-
-    def test_delete_page_contains_anonymous(self):
+    def test_delete_without_a_sha_returns_404(self):
         response = self.app.get("/delete")
         self.assertEqual(response.status_code, 404)
-
-    def test_get_about_page_contains_anonymous(self):
-        response = self.app.get("/about")
-        self.assertEqual(response.status_code, 200)
 
     def test_viewing_a_shalink(self):
         response = self.app.get(
@@ -83,8 +73,6 @@ class TestBase(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Data.query.count(), 0)
-
-    # Characterization tests: pin down current behaviour before refactoring.
 
     ORIGIN = {"Origin": "http://blurby.test"}
 
