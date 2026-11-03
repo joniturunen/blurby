@@ -11,6 +11,28 @@ from blurby.models import Data, db
 logger = logging.getLogger(__name__)
 
 
+def delete_expired():
+    """Delete secrets older than the TTL and return how many were removed.
+
+    Must run inside an application context.
+    """
+    cutoff = datetime.now() - secret_ttl()
+    logger.info(f"Checking for older than \033[1m{cutoff}\033[0m data entries...")
+    result = db.session.execute(db.delete(Data).where(Data.timestamp < cutoff))
+    db.session.commit()
+    if result.rowcount:
+        logger.info(
+            f"Cleaned up {result.rowcount} data entries older than \033[1m{cutoff}\033[0m!"
+        )
+    return result.rowcount
+
+
+def clean_up_once(app):
+    """Run one cleanup pass in an application context of `app`."""
+    with app.app_context():
+        delete_expired()
+
+
 class CleanUpCrew:
     """Background thread that removes data older than the TTL."""
 
@@ -24,18 +46,5 @@ class CleanUpCrew:
 
     def clean_up(self):
         while True:
-            with self.app.app_context():
-                ttl = secret_ttl()
-                logger.info(
-                    f"Checking for older than \033[1m{datetime.now() - ttl}\033[0m data entries..."
-                )
-                # if there are entries in the database that are older than the TTL remove them
-                if Data.query.filter(Data.timestamp < datetime.now() - ttl).all():
-                    logger.info(
-                        f"Found data entries that are older than \033[1m{datetime.now() - ttl}\033[0m, deleting..."
-                    )
-                    Data.query.filter(Data.timestamp < datetime.now() - ttl).delete()
-                    db.session.commit()
-                    # write log entry
-                    logger.info("Cleaned up old data entries!")
+            clean_up_once(self.app)
             time.sleep(self.interval)
