@@ -19,8 +19,8 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "flake8",
     "pytest>=8.4.2",
+    "ruff>=0.17.3",
 ]
 
 [tool.uv]
@@ -31,3 +31,8 @@ package = false
 pythonpath = ["app"]
 testpaths = ["app"]
 python_files = ["tests.py"]
+
+[tool.ruff.lint]
+# Same blocking checks the flake8 CI gate used: syntax errors, invalid
+# comparisons/prints, statement errors and undefined names.
+select = ["E9", "F63", "F7", "F82"]
