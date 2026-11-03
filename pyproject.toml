@@ -1,0 +1,26 @@
+[project]
+name = "blurby"
+# Keep in sync with app/version.py, which the app and Docker workflow read.
+version = "0.1.7.6"
+description = "A small Flask app for sharing short-lived secrets via SHA-256 links."
+# Werkzeug 2.2 uses ast.Str, which was removed in Python 3.14.
+requires-python = ">=3.9,<3.14"
+# Upper bounds pin the last versions the current code works with:
+# Flask-SQLAlchemy 3.x requires an application context for model queries,
+# and Flask/Werkzeug 2.3+ are incompatible with Flask-SQLAlchemy 2.x.
+dependencies = [
+    "bleach",
+    "flask>=2.2,<2.3",
+    "flask-sqlalchemy>=2.5,<3",
+    "sqlalchemy>=1.4,<2",
+    "waitress",
+    "werkzeug>=2.2,<2.3",
+]
+
+[dependency-groups]
+dev = [
+    "flake8",
+]
+
+[tool.uv]
+package = false
