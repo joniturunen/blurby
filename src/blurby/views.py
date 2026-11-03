@@ -2,7 +2,6 @@
 
 import hashlib
 import logging
-import sys
 import time
 
 from flask import Blueprint, current_app, redirect, render_template, request, url_for
@@ -41,13 +40,10 @@ def index():
                 url=url,
             )
         except Exception:
-            # Write log entry and return error message from sqlalchemy
-            logger.error(
+            # Log the error with its traceback and show a generic error page
+            logger.exception(
                 f"⚠ Error adding new data entry to database! Action called by {current_username()}"
             )
-            logger.error(f"{sys.exc_info()[0]}")
-            logger.error(f"{sys.exc_info()[1]}")
-            logger.error(f"statement error: {sys.exc_info()[0].__dict__}")
             return render_template(
                 "msg.html",
                 username=current_username(),
