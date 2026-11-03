@@ -72,6 +72,11 @@ class CleanUpCrew:
             time.sleep(self.interval)
 
 
+def current_username():
+    """Return the user named by the `username` request header, or "anonymous"."""
+    return request.headers.get("username") or "anonymous"
+
+
 @app.route("/", methods=["POST", "GET"])
 def index():
     if request.method == "POST":
@@ -80,55 +85,37 @@ def index():
         salty_data = posted_data + str(time.time())
         sha = hashlib.sha256(salty_data.encode())
         sha_link = sha.hexdigest()
-        creator = (
-            request.headers.get("username")
-            if request.headers.get("username")
-            else "anonymous"
-        )
+        creator = current_username()
         new_data = Data(data=posted_data, sha_link=sha_link, creator=creator)
         try:
             db.session.add(new_data)
             db.session.commit()
-            logger.info(
-                f"{request.headers.get('username')} submitted a secret"
-            ) if request.headers.get("username") else logger.info(
-                f"Anonymous submitted a secret"
-            )
+            logger.info(f"{current_username()} submitted a secret")
             return render_template(
                 "link.html",
-                username=request.headers.get("username")
-                if request.headers.get("username")
-                else "anonymous",
+                username=current_username(),
                 sha_link=sha_link,
                 url=url,
             )
         except:
             # Write log entry and return error message from sqlalchemy
             logger.error(
-                f"⚠ Error adding new data entry to database! Action called by {request.headers.get('username') if request.headers.get('username') else 'anonymous'}"
+                f"⚠ Error adding new data entry to database! Action called by {current_username()}"
             )
             logger.error(f"{sys.exc_info()[0]}")
             logger.error(f"{sys.exc_info()[1]}")
             logger.error(f"statement error: {sys.exc_info()[0].__dict__}")
             return render_template(
                 "msg.html",
-                username=request.headers.get("username")
-                if request.headers.get("username")
-                else "anonymous",
+                username=current_username(),
                 msg_title="⚠ There was an error!",
                 msg="There was a problem connecting the database",
             )
     else:
-        logger.info(
-            f"{request.headers.get('username')} requested the default page"
-        ) if request.headers.get("username") else logger.info(
-            f"Anonymous requested the default page"
-        )
+        logger.info(f"{current_username()} requested the default page")
         return render_template(
             "main.html",
-            username=request.headers.get("username")
-            if request.headers.get("username")
-            else "anonymous",
+            username=current_username(),
         )
 
 
@@ -136,16 +123,10 @@ def index():
 def read(sha_link):
     data = Data.query.get(sha_link)
     if data:
-        logger.info(
-            f"{request.headers.get('username')} requested a sha link"
-        ) if request.headers.get("username") else logger.info(
-            f"Anonymous requested a sha link"
-        )
+        logger.info(f"{current_username()} requested a sha link")
         return render_template(
             "read_link.html",
-            username=request.headers.get("username")
-            if request.headers.get("username")
-            else "anonymous",
+            username=current_username(),
             retrieved_message=data.data,
             time=data.timestamp,
             sha_link=data.sha_link,
@@ -155,16 +136,10 @@ def read(sha_link):
         )
     else:
         # return 404
-        logger.info(
-            f"{request.headers.get('username')} requested a non-existent sha link"
-        ) if request.headers.get("username") else logger.info(
-            f"Anonymous requested a non-existent sha link"
-        )
+        logger.info(f"{current_username()} requested a non-existent sha link")
         return render_template(
             "msg.html",
-            username=request.headers.get("username")
-            if request.headers.get("username")
-            else "anonymous",
+            username=current_username(),
             msg_title="⚠ No message found!",
             msg="Message might be too old and deleted or it never existed. - Check your link.",
         ), 404
@@ -176,25 +151,17 @@ def delete(sha_link):
     try:
         db.session.delete(data_to_delete)
         db.session.commit()
-        logger.info(
-            f"{request.headers.get('username')} deleted a sha link"
-        ) if request.headers.get("username") else logger.info(
-            f"Anonymous deleted a sha link"
-        )
+        logger.info(f"{current_username()} deleted a sha link")
         return render_template(
             "msg.html",
-            username=request.headers.get("username")
-            if request.headers.get("username")
-            else "anonymous",
+            username=current_username(),
             msg_title="👌 Message succesfully deleted!",
             msg="You can create a new secret!",
         )
     except:
         return render_template(
             "msg.html",
-            username=request.headers.get("username")
-            if request.headers.get("username")
-            else "anonymous",
+            username=current_username(),
             msg_titl="⚠ There was an error!",
             msg="Message was not found - maybe it was already deleted?",
         )
@@ -202,11 +169,7 @@ def delete(sha_link):
 
 @app.route("/find", methods=["POST", "GET"])
 def find():
-    logger.info(
-        f"{request.headers.get('username')} requested to find a secret"
-    ) if request.headers.get("username") else logger.info(
-        f"Anonymous requested to find a secret"
-    )
+    logger.info(f"{current_username()} requested to find a secret")
     if request.method == "POST":
         sha_link = request.form["sha_link"]
         # Check if sha_link is valid and 'secure'
@@ -219,9 +182,7 @@ def find():
             else:
                 return render_template(
                     "msg.html",
-                    username=request.headers.get("username")
-                    if request.headers.get("username")
-                    else "anonymous",
+                    username=current_username(),
                     msg_title="⚠ Invalid link!",
                     msg="The link you entered is not valid, please try again.",
                 )
@@ -229,34 +190,24 @@ def find():
             # Error message since the sha is not valid or not found
             return render_template(
                 "msg.html",
-                username=request.headers.get("username")
-                if request.headers.get("username")
-                else "anonymous",
+                username=current_username(),
                 msg_title="⚠ No message found!",
                 msg="Message might be too old and deleted or it never existed. - Check your link.",
             ), 404
     elif request.method == "GET":
         return render_template(
             "find.html",
-            username=request.headers.get("username")
-            if request.headers.get("username")
-            else "anonymous",
+            username=current_username(),
         )
 
 
 # Render About page
 @app.route("/about")
 def about():
-    logger.info(
-        f"{request.headers.get('username')} requested the about page"
-    ) if request.headers.get("username") else logger.info(
-        f"Anonymous requested the about page"
-    )
+    logger.info(f"{current_username()} requested the about page")
     return render_template(
         "about.html",
-        username=request.headers.get("username")
-        if request.headers.get("username")
-        else "anonymous",
+        username=current_username(),
         ttl=ttl,
         version=__version__,
         author=__author__,
