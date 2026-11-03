@@ -27,6 +27,8 @@ build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Fail on deprecations and resource leaks instead of letting them pile up.
+filterwarnings = ["error"]
 
 [tool.ruff.lint]
 # Same blocking checks the flake8 CI gate used: syntax errors, invalid
