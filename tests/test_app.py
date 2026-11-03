@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime, timedelta
 from unittest import mock
 
 from sqlalchemy.exc import SQLAlchemyError
@@ -135,6 +136,24 @@ class TestBase(unittest.TestCase):
         body = self.app.get(f"/link/{sha}").get_data(as_text=True)
         self.assertNotIn(payload, body)
         self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", body)
+
+    def test_an_expired_secret_is_not_shown_before_cleanup_removes_it(self):
+        self.flask_app.config["BLURBY_TTL_HOURS"] = 48
+        expired_sha = "e" * 64
+        db.session.add(
+            Data(
+                sha_link=expired_sha,
+                data="old news",
+                creator="anonymous",
+                timestamp=datetime.now() - timedelta(hours=49),
+            )
+        )
+        db.session.commit()
+
+        response = self.app.get(f"/link/{expired_sha}")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertNotIn("old news", response.get_data(as_text=True))
 
     def test_viewing_an_unknown_link_returns_404(self):
         response = self.app.get("/link/" + "0" * 64)

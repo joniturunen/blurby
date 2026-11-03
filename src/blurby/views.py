@@ -3,6 +3,7 @@
 import hashlib
 import logging
 import time
+from datetime import datetime
 
 from flask import Blueprint, current_app, redirect, render_template, request, url_for
 
@@ -64,7 +65,8 @@ def index():
 @bp.route("/link/<string:sha_link>")
 def read(sha_link):
     data = db.session.get(Data, sha_link)
-    if data:
+    # Expired secrets stay in the DB until the next cleanup pass; don't show them.
+    if data and datetime.now() < data.timestamp + secret_ttl():
         logger.info(f"{current_username()} requested a sha link")
         return render_template(
             "read_link.html",
