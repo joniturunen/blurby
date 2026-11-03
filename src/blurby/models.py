@@ -18,4 +18,4 @@ class Data(db.Model):
     blurby_version = db.Column(db.String(64), nullable=False, default=BLURBY_VERSION)
 
     def __repr__(self):
-        return "<Data %r>" % self.sha_link
+        return f"<Data {self.sha_link!r}>"

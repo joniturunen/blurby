@@ -1,5 +1,6 @@
-import unittest
 import random
+import unittest
+
 from blurby import __version__, create_app
 from blurby.models import Data, db
 
