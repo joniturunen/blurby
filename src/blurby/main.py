@@ -1,8 +1,8 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 from blurby.version import BLURBY_VERSION
-import hashlib, time, logging, threading, sys, bleach, os
+import hashlib, time, logging, threading, sys, os
 
 # Define version and author
 __version__ = BLURBY_VERSION
@@ -175,10 +175,9 @@ def find():
         # Check if sha_link is valid and 'secure'
         if len(sha_link) == 64:
             if sha_link.isalnum():
-                # Sanitize with bleach
-                sha_link = bleach.clean(sha_link)
-                # file deepcode ignore OR: sha_link gets cleaned by bleach, fixed 11th of May 2022
-                return redirect(f"/link/{sha_link}")
+                # url_for builds a same-site path and URL-quotes the value, so the
+                # input can't turn this into an open redirect.
+                return redirect(url_for("read", sha_link=sha_link))
             else:
                 return render_template(
                     "msg.html",

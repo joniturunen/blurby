@@ -9,7 +9,6 @@ requires-python = ">=3.9,<3.14"
 # Flask-SQLAlchemy 3.x requires an application context for model queries,
 # and Flask/Werkzeug 2.3+ are incompatible with Flask-SQLAlchemy 2.x.
 dependencies = [
-    "bleach",
     "flask>=2.2,<2.3",
     "flask-sqlalchemy>=2.5,<3",
     "sqlalchemy>=1.4,<2",
