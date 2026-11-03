@@ -31,6 +31,8 @@ class TestBase(unittest.TestCase):
     def tearDown(self):
         db.session.remove()
         db.drop_all()
+        # Each test builds its own engine; close its SQLite connection explicitly.
+        db.engine.dispose()
         self.app_context.pop()
 
     def test_db_entry_is_created(self):
