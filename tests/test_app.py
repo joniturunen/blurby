@@ -90,6 +90,13 @@ class TestBase(unittest.TestCase):
             response.get_data(as_text=True),
         )
 
+    def test_posting_a_secret_without_an_origin_header_links_to_this_host(self):
+        # Browsers send Origin with form posts, but curl and scripts don't.
+        response = self.app.post("/", data={"data": "no origin"})
+        self.assertEqual(response.status_code, 200)
+        sha = Data.query.filter_by(data="no origin").one().sha_link
+        self.assertIn(f"http://localhost/link/{sha}", response.get_data(as_text=True))
+
     def test_posting_a_secret_records_the_username_header_as_creator(self):
         response = self.app.post(
             "/",

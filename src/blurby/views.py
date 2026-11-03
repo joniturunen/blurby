@@ -23,7 +23,10 @@ def current_username():
 def index():
     if request.method == "POST":
         posted_data = request.form["data"]
-        url = request.headers.get("Origin") + "/"
+        # Browsers send Origin with form posts; fall back to this host for
+        # clients that don't (curl, scripts).
+        origin = request.headers.get("Origin")
+        url = f"{origin}/" if origin else request.host_url
         salty_data = posted_data + str(time.time())
         sha = hashlib.sha256(salty_data.encode())
         sha_link = sha.hexdigest()
