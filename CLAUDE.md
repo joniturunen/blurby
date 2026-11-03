@@ -20,6 +20,7 @@ BLURBY_DB_FILE=$PWD/data/sqlite.db uv run python app/main.py           # waitres
 # Tests (pytest runs the unittest-style tests in app/tests.py against in-memory SQLite)
 uv run pytest
 uv run pytest app/tests.py::TestBase::test_viewing_a_shalink   # single test
+uv run pytest --cov                                            # with branch coverage report (as CI runs it)
 
 # Lint and format (configured in pyproject.toml; CI runs check and format --check)
 uv run ruff check .
@@ -50,6 +51,6 @@ Moving to Flask-SQLAlchemy 3 means wrapping those call sites in `app.app_context
 ## Versioning and CI
 
 - `app/version.py` contains exactly `BLURBY_VERSION='x.y.z.w'`. Bump it with each change; past PRs do so. The Docker workflow runs `source app/version.py` in bash, so the file must stay valid shell (no spaces around `=`). The version is also stored on every row (`Data.blurby_version`) and shown on `/about`.
-- `.github/workflows/python-app.yml` (push/PR to `main`) runs `uv sync --locked`, `ruff check`, `ruff format --check`, and then `uv run pytest` on Python 3.10.
+- `.github/workflows/python-app.yml` (push/PR to `main`) runs `uv sync --locked`, `ruff check`, `ruff format --check`, and then `uv run pytest --cov` on Python 3.10.
 - `.github/workflows/docker_build_push.yml` (push to `main`) builds the image and pushes it to Docker Hub as `joniturunen/blurby:<BLURBY_VERSION>` and `:latest`. The image uses Python 3.9, installs the locked runtime dependencies into `/opt/venv`, and copies `app/` to `/blurby`.
 - `pyproject.toml` has a `version` field because uv requires one. Keep it in sync with `app/version.py` until the version moves to `pyproject.toml` alone.
