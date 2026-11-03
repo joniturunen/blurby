@@ -121,7 +121,7 @@ def index():
 
 @app.route("/link/<string:sha_link>")
 def read(sha_link):
-    data = Data.query.get(sha_link)
+    data = db.session.get(Data, sha_link)
     if data:
         logger.info(f"{current_username()} requested a sha link")
         return render_template(
@@ -147,7 +147,7 @@ def read(sha_link):
 
 @app.route("/delete/<string:sha_link>")
 def delete(sha_link):
-    data_to_delete = Data.query.get(sha_link)
+    data_to_delete = db.session.get(Data, sha_link)
     try:
         db.session.delete(data_to_delete)
         db.session.commit()
