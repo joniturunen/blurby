@@ -1,4 +1,7 @@
 import unittest
+from unittest import mock
+
+from sqlalchemy.exc import SQLAlchemyError
 
 from blurby import __version__, create_app
 from blurby.models import Data, db
@@ -95,6 +98,16 @@ class TestBase(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Data.query.filter_by(data="from alice").one().creator, "alice")
+
+    def test_a_database_error_while_saving_shows_an_error_page(self):
+        failing_commit = mock.patch.object(
+            db.session, "commit", side_effect=SQLAlchemyError("disk I/O error")
+        )
+        with failing_commit, self.assertLogs("blurby.views", "ERROR"):
+            response = self.app.post("/", data={"data": "lost"}, headers=self.ORIGIN)
+        body = response.get_data(as_text=True)
+        self.assertIn("There was a problem connecting the database", body)
+        self.assertNotIn("/link/", body)
 
     def test_viewing_a_secret_shows_its_content_and_creator(self):
         body = self.app.get(f"/link/{self.sample_sha}").get_data(as_text=True)
