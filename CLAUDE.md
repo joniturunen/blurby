@@ -32,7 +32,7 @@ docker compose up --build
 
 Dependencies are managed with uv. Commit `pyproject.toml` and `uv.lock` together: CI and the Docker image both install with `uv sync --locked`, so a stale lockfile fails the build. CI and the Dockerfile pin uv to 0.13.1, and the build backend is `uv_build`.
 
-Runtime dependencies are Flask 3, Flask-SQLAlchemy 3, SQLAlchemy 2 and waitress. Flask-SQLAlchemy 3 requires an application context for all database access. The lock forks SQLAlchemy: 2.1 needs Python 3.11+, so 3.9 and 3.10 get 2.0.
+Runtime dependencies are Flask 3, Flask-SQLAlchemy 3, SQLAlchemy 2 and waitress. Flask-SQLAlchemy 3 requires an application context for all database access. Blurby requires Python 3.14 (`.python-version` sets it for uv).
 
 ## Architecture
 
@@ -58,5 +58,5 @@ The image builds in `/build` and installs the locked runtime dependencies plus t
 
 - `src/blurby/version.py` contains exactly `BLURBY_VERSION='...'`. The Docker workflow runs `source src/blurby/version.py` in bash, so the file must stay valid shell (no spaces around `=`), and it is excluded from `ruff format`. The version is also stored on every row (`Data.blurby_version`) and shown on `/about`.
 - `pyproject.toml` has a `version` field because uv requires one. Keep it in sync with `src/blurby/version.py`.
-- `.github/workflows/python-app.yml` (push/PR to `main`) runs `uv sync --locked`, `ruff check`, `ruff format --check`, and then `uv run pytest --cov` on Python 3.10.
-- `.github/workflows/docker_build_push.yml` (push to `main`) builds the image and pushes it to Docker Hub as `joniturunen/blurby:<BLURBY_VERSION>` and `:latest`. The image uses Python 3.9.
+- `.github/workflows/python-app.yml` (push/PR to `main`) runs `uv sync --locked`, `ruff check`, `ruff format --check`, and then `uv run pytest --cov` on Python 3.14.
+- `.github/workflows/docker_build_push.yml` (push to `main`) builds the image and pushes it to Docker Hub as `joniturunen/blurby:<BLURBY_VERSION>` and `:latest`. The image is based on `python:3.14-slim-trixie`.

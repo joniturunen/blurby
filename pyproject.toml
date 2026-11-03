@@ -3,7 +3,7 @@ name = "blurby"
 # Keep in sync with src/blurby/version.py, which the app and Docker workflow read.
 version = "0.1.7.6"
 description = "A small Flask app for sharing short-lived secrets via SHA-256 links."
-requires-python = ">=3.9"
+requires-python = ">=3.14"
 dependencies = [
     "flask>=3.1",
     "flask-sqlalchemy>=3.1",

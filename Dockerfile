@@ -1,5 +1,5 @@
 # For more information, please refer to https://aka.ms/vscode-docker-python
-FROM python:3.9.13-slim-buster
+FROM python:3.14-slim-trixie
 
 # Install a pinned uv binary from its official image
 COPY --from=ghcr.io/astral-sh/uv:0.13.1 /uv /bin/uv
