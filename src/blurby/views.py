@@ -90,6 +90,14 @@ def read(sha_link):
 @bp.route("/delete/<string:sha_link>")
 def delete(sha_link):
     data_to_delete = db.session.get(Data, sha_link)
+    if data_to_delete is None:
+        logger.info(f"{current_username()} tried to delete a non-existent sha link")
+        return render_template(
+            "msg.html",
+            username=current_username(),
+            msg_title="⚠ There was an error!",
+            msg="Message was not found - maybe it was already deleted?",
+        ), 404
     try:
         db.session.delete(data_to_delete)
         db.session.commit()
@@ -104,7 +112,7 @@ def delete(sha_link):
         return render_template(
             "msg.html",
             username=current_username(),
-            msg_titl="⚠ There was an error!",
+            msg_title="⚠ There was an error!",
             msg="Message was not found - maybe it was already deleted?",
         )
 

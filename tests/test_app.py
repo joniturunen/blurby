@@ -116,6 +116,13 @@ class TestBase(unittest.TestCase):
         self.assertIn("There was a problem connecting the database", body)
         self.assertNotIn("/link/", body)
 
+    def test_deleting_an_unknown_secret_returns_404_with_an_error_title(self):
+        response = self.app.get("/delete/" + "0" * 64)
+        self.assertEqual(response.status_code, 404)
+        body = response.get_data(as_text=True)
+        self.assertIn("There was an error!", body)
+        self.assertIn("Message was not found", body)
+
     def test_viewing_a_secret_shows_its_content_and_creator(self):
         body = self.app.get(f"/link/{self.sample_sha}").get_data(as_text=True)
         self.assertIn("Lorem ipsum dolor sit amet", body)
