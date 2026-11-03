@@ -32,7 +32,7 @@ docker compose up --build
 
 Dependencies are managed with uv. Commit `pyproject.toml` and `uv.lock` together: CI and the Docker image both install with `uv sync --locked`, so a stale lockfile fails the build. CI and the Dockerfile pin uv to 0.13.1, and the build backend is `uv_build`.
 
-The upper bounds in `pyproject.toml` (Flask/Werkzeug <2.3) are the old known-good pins, waiting to be upgraded. Werkzeug 2.2 uses `ast.Str`, which doesn't exist on Python 3.14, so `requires-python` is capped at `<3.14` until then. Flask-SQLAlchemy 3 requires an application context for all database access. The lock forks SQLAlchemy: 2.1 needs Python 3.11+, so 3.9 and 3.10 get 2.0.
+Runtime dependencies are Flask 3, Flask-SQLAlchemy 3, SQLAlchemy 2 and waitress. Flask-SQLAlchemy 3 requires an application context for all database access. The lock forks SQLAlchemy: 2.1 needs Python 3.11+, so 3.9 and 3.10 get 2.0.
 
 ## Architecture
 
