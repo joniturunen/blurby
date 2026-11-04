@@ -71,6 +71,39 @@ def check_preconditions(app):
     )
 
 
+SECURITY_NOTES = "https://github.com/joniturunen/blurby#security"
+
+
+def log_security_notes(app):
+    """Log the risks that Blurby can't check for itself, and how to avoid them."""
+    header = app.config["BLURBY_USERNAME_HEADER"]
+    if header:
+        logger.warning(
+            f"Blurby shows the {header!r} request header as the user's name. The "
+            "proxy in front of Blurby must set it, replacing any value a client "
+            "sent, or remove it; otherwise anyone can claim any name. Set "
+            "BLURBY_USERNAME_HEADER to the header your proxy sets, or to nothing "
+            "to show everyone as anonymous."
+        )
+    else:
+        logger.info("BLURBY_USERNAME_HEADER is empty: everyone is anonymous.")
+    logger.warning(
+        "Blurby speaks plain HTTP. Serve it over HTTPS, through a proxy that sends "
+        "Strict-Transport-Security and rate-limits requests, and don't publish its "
+        f"port to the internet. See {SECURITY_NOTES}"
+    )
+    if not app.config["BLURBY_MAX_SECRETS"]:
+        logger.warning(
+            "BLURBY_MAX_SECRETS is 0: Blurby stores any number of secrets, which "
+            "can fill the disk."
+        )
+    if hasattr(os, "geteuid") and os.geteuid() == 0:
+        logger.warning(
+            "Blurby runs as root. Run it as an unprivileged user; the Docker image "
+            "uses UID 5678."
+        )
+
+
 def stop_on_sigterm(signum, frame):
     """Stop the server on SIGTERM (`docker stop`) the way Ctrl+C does.
 
@@ -99,6 +132,7 @@ def main():
     logger.info(f"\033[1;32m{'-' * 30}\033[0m")
     # Call check_preconditions function to check if database file exists
     check_preconditions(app)
+    log_security_notes(app)
     # Start clean_up crew process in background
     CleanUpCrew(app)
     signal.signal(signal.SIGTERM, stop_on_sigterm)
