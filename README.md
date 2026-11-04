@@ -5,7 +5,15 @@ Simple little Flask app that takes pastebin-like of data from user and stores it
 
 ## How-To
 
-Install the dependencies with [uv](https://docs.astral.sh/uv/) (`uv sync`), then just run `uv run blurby --debug` and head out to your browser with the url [http://127.0.0.1:5000](http://127.0.0.1:5000).
+Install the dependencies with [uv](https://docs.astral.sh/uv/) (`uv sync`), then run Blurby with a database file in the repo's `data/` folder (gitignored; the file is created on first start):
+
+```bash
+BLURBY_DB_FILE=./data/sqlite.db uv run blurby
+```
+
+and head out to your browser with the url [http://127.0.0.1:8080](http://127.0.0.1:8080). Without `BLURBY_DB_FILE`, Blurby uses the Docker path `/blurby/data/sqlite.db` and won't start when `/blurby/data` doesn't exist.
+
+Add `--debug` for the Flask debug server on [http://127.0.0.1:5000](http://127.0.0.1:5000). On macOS, turn off the AirPlay Receiver first (System Settings → General → AirDrop & Handoff): it uses port 5000, and the debug server exits with "Address already in use".
 
 Check the Using Docker section for more info.
 
