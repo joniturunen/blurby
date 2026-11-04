@@ -75,3 +75,25 @@ def test_every_page_has_a_title_and_the_menu(client, method, path):
     assert "· Blurby</title>" in body
     for href in ("/", "/find", "/about"):
         assert elements(body, "a", href=href)
+
+
+STATIC = Path(blurby.__file__).parent / "static"
+STYLESHEETS = sorted(STATIC.glob("css/*.css"), key=lambda p: p.name)
+# A url(...) in CSS that points at a file, not at inline data.
+CSS_URL = re.compile(r"""url\(\s*["']?(?!data:)([^"')\s]+)""")
+
+
+@pytest.mark.parametrize("path", STYLESHEETS, ids=lambda p: p.name)
+def test_every_file_a_stylesheet_loads_is_served(app, path):
+    client = app.test_client()
+    for url in CSS_URL.findall(path.read_text(encoding="utf-8")):
+        target = (path.parent / url).resolve().relative_to(STATIC.resolve())
+        response = client.get(f"/static/{target.as_posix()}")
+        assert response.status_code == 200, url
+        response.close()
+
+
+def test_the_page_shows_the_photo():
+    css = (STATIC / "css" / "blurby.css").read_text(encoding="utf-8")
+
+    assert "../images/hush.jpg" in CSS_URL.findall(css)

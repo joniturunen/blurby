@@ -7,6 +7,46 @@ body > header nav ul {
   flex-wrap: wrap;
 }
 
+/* The photo under the menu, from Blurby's first theme: krakenimages on
+   Unsplash (https://unsplash.com/photos/8RXmc8pLX_I), resized. It fades into
+   the page at the top and bottom, in light and dark mode, and the page's card
+   overlaps its lower part. */
+:root {
+  --blurby-photo-height: clamp(14rem, 28vw, 24rem);
+  --blurby-photo-overlap: clamp(3rem, 9vw, 9rem);
+}
+
+body > header {
+  padding-bottom: 0;
+}
+
+body > header::after {
+  content: "";
+  display: block;
+  height: var(--blurby-photo-height);
+  background-color: #8a8a8a;
+  background-image:
+    linear-gradient(var(--pico-background-color), transparent 1.5rem),
+    linear-gradient(transparent 45%, var(--pico-background-color)),
+    url("../images/hush.jpg");
+  background-position: center, center, 60% 22%;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* On phones, zoom in on the face. */
+@media (max-width: 575px) {
+  body > header::after {
+    background-size: cover, cover, 190% auto;
+    background-position: center, center, 68% 12%;
+  }
+}
+
+body > main {
+  position: relative;
+  margin-top: calc(-1 * var(--blurby-photo-overlap));
+}
+
 /* A link ID is 64 characters with no break opportunities. */
 code {
   overflow-wrap: anywhere;
