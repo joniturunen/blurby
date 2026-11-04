@@ -19,13 +19,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
         name: Check out code
         
       - name: Get a version number
-        run: | 
-          source app/version.py  
-          echo "BLURBY_VERSION=$BLURBY_VERSION" >> $GITHUB_ENV
+        run: |
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          echo "BLURBY_VERSION=$version" >> "$GITHUB_ENV"
 
       - uses: mr-smithers-excellent/docker-build-push@v5
         name: Build & push Docker image
