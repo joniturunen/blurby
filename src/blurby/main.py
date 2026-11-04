@@ -87,7 +87,14 @@ def main():
     else:
         from waitress import serve
 
-        serve(app, host=host_ipaddr, port=8080, threads=app.config["BLURBY_THREADS"])
+        serve(
+            app,
+            host=host_ipaddr,
+            port=8080,
+            threads=app.config["BLURBY_THREADS"],
+            # Refuse larger bodies up front instead of buffering them to disk.
+            max_request_body_size=app.config["MAX_CONTENT_LENGTH"],
+        )
 
 
 if __name__ == "__main__":

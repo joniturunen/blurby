@@ -6,6 +6,7 @@ import sqlalchemy as sa
 from flask import Flask
 
 import blurby
+from blurby.config import MAX_REQUEST_BYTES
 from blurby.main import check_preconditions, main
 from blurby.models import Data, db
 
@@ -168,7 +169,14 @@ def test_main_serves_with_waitress_on_port_8080(run_main):
     calls, crews = run_main()
 
     app, kwargs = calls["serve"]
-    assert kwargs == {"host": "127.0.0.1", "port": 8080, "threads": 3}
+    assert kwargs == {
+        "host": "127.0.0.1",
+        "port": 8080,
+        "threads": 3,
+        # Without it, waitress buffers bodies up to 1 GiB to disk before Flask
+        # can reject them.
+        "max_request_body_size": MAX_REQUEST_BYTES,
+    }
     assert crews == [app]
     assert "run" not in calls
 
