@@ -20,6 +20,29 @@ def current_username():
     return request.headers.get("username") or "anonymous"
 
 
+@bp.before_request
+def refuse_posts_from_other_sites():
+    """Refuse a form post that a page on another site sent (CSRF).
+
+    Browsers tell where a request comes from in Sec-Fetch-Site: Blurby's own
+    forms and its reveal fetch send "same-origin", and a page on another site
+    sends "same-site" or "cross-site". Requests without the header (curl,
+    scripts, browsers from before 2023) go through. Not a check of Origin
+    against Host: behind a proxy, Host can name the proxy's upstream instead.
+    """
+    if request.method != "POST":
+        return None
+    if request.headers.get("Sec-Fetch-Site") not in ("same-site", "cross-site"):
+        return None
+    logger.info(f"{current_username()} sent a form from another site; refused it")
+    return render_template(
+        "msg.html",
+        username=current_username(),
+        msg_title="⚠ Request refused!",
+        msg="Blurby only accepts forms sent from its own pages.",
+    ), 403
+
+
 @bp.app_template_filter("hours")
 def describe_hours(hours):
     """A TTL in words: "1 hour", "2 days", "1 week"."""
