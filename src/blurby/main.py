@@ -17,8 +17,16 @@ def check_preconditions(app):
     # Check if database file exists
     logger.info(f"Checking if database file {db_file} exists...")
     # Check if filepath is valid path
-    if not os.path.isdir(os.path.dirname(db_file)):
-        logger.error(f"{db_file} is not a valid path!")
+    db_dir = os.path.dirname(db_file)
+    if not os.path.isdir(db_dir):
+        logger.error(
+            f"Cannot use BLURBY_DB_FILE={db_file}: "
+            f"the directory {db_dir} does not exist."
+        )
+        logger.error(
+            "Create it, or set BLURBY_DB_FILE to a .db file in an existing "
+            "directory, e.g. BLURBY_DB_FILE=./data/sqlite.db"
+        )
         sys.exit(1)
     # Check if db_file variable includes a file extension at the end
     if not db_file.endswith(".db"):

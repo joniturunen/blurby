@@ -20,6 +20,24 @@ def test_exits_when_the_db_directory_does_not_exist(make_file_app, tmp_path):
     assert excinfo.value.code == 1
 
 
+def test_explains_a_missing_db_directory_and_how_to_fix_it(
+    make_file_app, tmp_path, caplog
+):
+    # Outside Docker the default /blurby/data doesn't exist, so this is the
+    # first thing anyone running Blurby locally sees.
+    missing_dir = tmp_path / "missing"
+    app = make_file_app(missing_dir / "sqlite.db")
+
+    with (
+        caplog.at_level(logging.ERROR, logger="blurby.main"),
+        pytest.raises(SystemExit),
+    ):
+        check_preconditions(app)
+
+    assert f"directory {missing_dir} does not exist" in caplog.text
+    assert "set BLURBY_DB_FILE" in caplog.text
+
+
 def test_exits_when_the_db_file_does_not_end_in_db(make_file_app, tmp_path):
     app = make_file_app(tmp_path / "sqlite.sqlite3")
 
