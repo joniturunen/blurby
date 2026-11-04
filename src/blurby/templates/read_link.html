@@ -1,59 +1,34 @@
 {% extends 'base_structure.html' %}
 
-<!-- BODY/HEADER  -->
-{% block header %}
-<!-- <a href="#" class="logo">Secret link recovered</a> -->
+{% block title %}A secret{% endblock %}
 
-{% endblock %}
-
-<!-- BODY/MAIN -->
 {% block main %}
-<header class="major">
-    <!-- <span class="date">April 25, 2017</span> -->
-    <h4>The secret messages reveals as follows 😈</h4>
-    <textarea name="data" id="data" rows="12" maxlength="16384" readonly>{{ retrieved_message }}</textarea>
-    <p></p>
-</header>
-<form method="POST" action="/delete/{{ sha_link }}">
-    <div class="fields" align="left">
-        <div class="field">
-            <label for="created">Message was created</label>
-            <input type="text" name="created" id="created" value="{{ time }}" disabled />
-        </div>
-        <div class="field">
-            <label for="sha">SHA</label>
-            <input type="text" name="sha" id="sha" value="{{ sha_link }}" disabled />
-        </div>
-        <div class="field">
-            <label for="ttl">Message will be kept until</label>
-            <input type="text" name="ttl" id="ttl" value="{{ ttl }}" disabled />
-        </div>
-        <div class="field">
-            <label for="creator">Creator (userid)</label>
-            <input type="text" name="creator" id="creator" value="{{ creator }}" disabled />
-        </div>
-    </div>
-    <ul class="actions">
-        <li><input type="submit" value="Delete the message" /></li>
-    </ul>
-</form>
-{% endblock %}
-
-{% block footer %}
-<footer id="footer">
-
-
-    <section>
-        <form method="GET" action="/">
-            <ul class="actions">
-                <li><input type="submit" value="Create a new secret message! 😈" /></li>
-            </ul>
-        </form>
-
-    </section>
-
-
-
-</footer>
-
+<article{% if shown_once %} data-shown-once{% endif %}>
+  <header>
+    <h1>The secret</h1>
+    {% if shown_once %}
+    <p>🔥 This secret has been burnt: it won't be shown again. Copy it before you leave this page.</p>
+    {% endif %}
+  </header>
+  <textarea id="secret" rows="10" readonly aria-label="The secret">{{ retrieved_message }}</textarea>
+  <button type="button" data-copy="#secret" hidden>Copy the secret</button>
+  <table>
+    <tbody>
+      <tr><th scope="row">Created</th><td>{{ time|when }}</td></tr>
+      {% if not shown_once %}
+      <tr><th scope="row">Kept until</th><td>{{ ttl|when }}</td></tr>
+      {% endif %}
+      <tr><th scope="row">Creator</th><td>{{ creator }}</td></tr>
+      <tr><th scope="row">Link ID</th><td><code>{{ sha_link }}</code></td></tr>
+    </tbody>
+  </table>
+  {% if not shown_once %}
+  <footer>
+    <form method="POST" action="/burn/{{ sha_link }}">
+      <button type="submit" class="contrast">🔥 Burn after reading</button>
+      <small>Burning deletes the secret for good. Its link then only shows when it was burnt.</small>
+    </form>
+  </footer>
+  {% endif %}
+</article>
 {% endblock %}

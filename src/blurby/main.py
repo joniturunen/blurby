@@ -7,6 +7,7 @@ import sys
 
 from blurby import __version__, create_app
 from blurby.cleanup import CleanUpCrew
+from blurby.migrate import upgrade_schema
 from blurby.models import db
 
 logger = logging.getLogger(__name__)
@@ -50,9 +51,17 @@ def check_preconditions(app):
     else:
         # Write log entry
         logger.info(f"Database file: {db_file} found!")
+    # Add the columns that a database from an earlier version lacks.
+    try:
+        with app.app_context():
+            upgrade_schema()
+    except Exception:
+        logger.exception(f"Could not upgrade the schema of the database {db_file}")
+        sys.exit(1)
     logger.info(
         f"\033[1mPreconditions check passed with following env values\033[0m:\033[1;32m \
                 \n{' ' * 42}- BLURBY_TTL_HOURS = {app.config['BLURBY_TTL_HOURS']} \
+                \n{' ' * 42}- BLURBY_MAX_TTL_HOURS = {app.config['BLURBY_MAX_TTL_HOURS']} \
                 \n{' ' * 42}- BLURBY_THREADS = {app.config['BLURBY_THREADS']} \
                 \n{' ' * 42}- BLURBY_DB_FILE = {db_file} \
                 \n{' ' * 42}- BLURBY_CLEANUP_INTERVAL = {app.config['BLURBY_CLEANUP_INTERVAL']} \

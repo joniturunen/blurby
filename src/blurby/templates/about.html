@@ -1,64 +1,24 @@
 {% extends 'base_structure.html' %}
 
+{% block title %}About{% endblock %}
 
-<!-- BODY/INTRO -->
-{% block intro %}
-<div id="intro">
-<h1>🙊 Blurby</h1>
-<h3>Blurb your secrets</h3>
-    <ul class="actions">
-        <!-- <li><a href="#header" class="button icon solid solo fa-arrow-down scrolly">ACTION!</a></li> -->
-    </ul>
-</div>
-{% endblock %}
-
-<!-- BODY/HEADER  -->
-{% block header %}
-<!-- <a href="#" class="logo">Data</a> -->
-{% endblock %}
-
-<!-- BODY/MAIN -->
 {% block main %}
-<header class="major">
-</header>
-
-    <!-- Application information -->
-<form>
-    <div class="fields" align="left">
-        <div class="field">
-        <label for="About">About Blurby</label>
-        <p>Blurby is a web application that allows you to store your secrets in a temporary place safely.
-        You can share your secrets via a SHA ID or with a direct URL with your friends.
-        </p>
-        </div>
-        <div class="field">
-            <label for="Version">Version</label>
-            <input type="text" name="Version" id="Version" value="{{ version }}" disabled />
-        </div>
-        <div class="field">
-            <label for="ttl">TTL value</label>
-            <input type="text" name="ttl" id="ttl" value="{{ ttl }}" disabled />
-        </div>
-
-        <div class="field">
-            <label for="Git">Repository</label>
-            <a href="https://github.com/joniturunen/blurby">GitHub</a>
-        </div>
-
-    </div>
-</form>
-{% endblock %}
-
-
-
-
-<!-- BODY/FOOTER -->
-{% block footer %}
-<footer id="footer">
-    <section>
-
-    </section>
-
-</footer>
-
+<article>
+  <header>
+    <h1>🙊 Blurby</h1>
+    <p>Blurb your secrets</p>
+  </header>
+  <p>Blurby keeps your secrets in a temporary place. Share a secret with its link, or with its link ID on the Find page. Each secret is deleted when its time is up.</p>
+  <table>
+    <tbody>
+      <tr><th scope="row">Version</th><td>{{ version }}</td></tr>
+      <tr><th scope="row">Default TTL</th><td>{{ default_ttl|hours }}</td></tr>
+      <tr><th scope="row">Longest TTL</th><td>{{ max_ttl|hours }}</td></tr>
+      <tr><th scope="row">Repository</th><td><a href="https://github.com/joniturunen/blurby">GitHub</a></td></tr>
+    </tbody>
+  </table>
+  <footer>
+    <small>Styled with <a href="https://picocss.com">Pico CSS</a> (MIT license). Photo by <a href="https://unsplash.com/photos/8RXmc8pLX_I">krakenimages</a> on Unsplash.</small>
+  </footer>
+</article>
 {% endblock %}

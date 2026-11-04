@@ -1,0 +1,116 @@
+/* Blurby's additions to Pico CSS (pico.orange.min.css, v2.1.1).
+   Load nothing from other sites here: no web fonts, no remote url()s. */
+
+/* Let the menu wrap on phones instead of overflowing. */
+body > header nav,
+body > header nav ul {
+  flex-wrap: wrap;
+}
+
+/* The photo under the menu, from Blurby's first theme: krakenimages on
+   Unsplash (https://unsplash.com/photos/8RXmc8pLX_I), resized. It fades into
+   the page at the top and bottom, in light and dark mode, and the page's card
+   overlaps its lower part. */
+:root {
+  --blurby-photo-height: clamp(14rem, 28vw, 24rem);
+  --blurby-photo-overlap: clamp(3rem, 9vw, 9rem);
+}
+
+body > header {
+  padding-bottom: 0;
+}
+
+body > header::after {
+  content: "";
+  display: block;
+  height: var(--blurby-photo-height);
+  background-color: #8a8a8a;
+  background-image:
+    linear-gradient(var(--pico-background-color), transparent 1.5rem),
+    linear-gradient(transparent 45%, var(--pico-background-color)),
+    url("../images/hush.jpg");
+  background-position: center, center, 60% 22%;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* On phones, zoom in on the face. */
+@media (max-width: 575px) {
+  body > header::after {
+    background-size: cover, cover, 190% auto;
+    background-position: center, center, 68% 12%;
+  }
+}
+
+body > main {
+  position: relative;
+  margin-top: calc(-1 * var(--blurby-photo-overlap));
+}
+
+/* A link ID is 64 characters with no break opportunities. */
+code {
+  overflow-wrap: anywhere;
+}
+
+.brand {
+  text-decoration: none;
+}
+
+.user {
+  color: var(--pico-muted-color);
+}
+
+article > header h1 {
+  margin-bottom: 0;
+  font-size: 1.5rem;
+}
+
+article > header p {
+  margin: 0.5rem 0 0;
+  color: var(--pico-muted-color);
+}
+
+/* A secret is shown as it was typed: keep its spacing and line breaks. */
+textarea[readonly] {
+  font-family: var(--pico-font-family-monospace);
+}
+
+body > footer {
+  text-align: center;
+  color: var(--pico-muted-color);
+}
+
+/* Keep a date and time on one line. */
+time {
+  white-space: nowrap;
+}
+
+/* The light and dark mode switch in the menu: a moon in light mode, a sun in
+   dark mode. */
+button.theme-switch {
+  display: inline-flex;
+  margin: 0;
+  padding: 0.25rem;
+  border: none;
+  background: none;
+  color: var(--pico-muted-color);
+}
+
+button.theme-switch:hover {
+  color: var(--pico-primary-hover);
+}
+
+.theme-switch svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.theme-switch[aria-pressed="true"] .moon,
+.theme-switch[aria-pressed="false"] .sun {
+  display: none;
+}

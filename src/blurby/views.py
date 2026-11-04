@@ -2,11 +2,12 @@
 
 import logging
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from flask import Blueprint, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, redirect, render_template, request, url_for
+from markupsafe import Markup
 
-from blurby.config import MAX_SECRET_LENGTH, secret_ttl
+from blurby.config import MAX_SECRET_LENGTH, ttl_choices
 from blurby.models import Data, db
 from blurby.version import BLURBY_VERSION
 
@@ -17,6 +18,67 @@ logger = logging.getLogger(__name__)
 def current_username():
     """Return the user named by the `username` request header, or "anonymous"."""
     return request.headers.get("username") or "anonymous"
+
+
+@bp.app_template_filter("hours")
+def describe_hours(hours):
+    """A TTL in words: "1 hour", "2 days", "1 week"."""
+    unit, count = "hour", hours
+    for name, length in (("week", 168), ("day", 24)):
+        if hours % length == 0:
+            unit, count = name, hours // length
+            break
+    return f"{count} {unit}{'' if count == 1 else 's'}"
+
+
+@bp.app_template_filter("when")
+def show_time(value):
+    """A <time> element for a stored time, with the server's timezone.
+
+    Blurby stores naive local times: UTC in the Docker image.
+    """
+    local = value.astimezone()
+    return Markup('<time datetime="{}">{}</time>').format(
+        local.isoformat(timespec="minutes"), local.strftime("%Y-%m-%d %H:%M %Z")
+    )
+
+
+def not_found():
+    logger.info(f"{current_username()} requested a non-existent sha link")
+    return render_template(
+        "msg.html",
+        username=current_username(),
+        msg_title="⚠ No message found!",
+        msg="Message might be too old and deleted or it never existed. - Check your link.",
+    ), 404
+
+
+def database_error():
+    return render_template(
+        "msg.html",
+        username=current_username(),
+        msg_title="⚠ There was an error!",
+        msg="There was a problem connecting the database",
+    ), 500
+
+
+def receipt(secret, just_burnt=False):
+    """The read receipt of a burnt secret: 410 Gone, or 200 right after burning."""
+    return render_template(
+        "receipt.html",
+        username=current_username(),
+        secret=secret,
+        just_burnt=just_burnt,
+    ), 200 if just_burnt else 410
+
+
+def invalid_ttl():
+    return render_template(
+        "msg.html",
+        username=current_username(),
+        msg_title="⚠ Invalid TTL!",
+        msg="Choose how long to keep the secret from the list.",
+    ), 400
 
 
 @bp.route("/", methods=["POST", "GET"])
@@ -33,6 +95,14 @@ def index():
         # Browsers count a line break as one character but send it as "\r\n".
         if len(posted_data.replace("\r\n", "\n")) > MAX_SECRET_LENGTH:
             return secret_too_long()
+        # Without a choice (curl, scripts), the default TTL applies.
+        ttl_hours = request.form.get("ttl_hours")
+        if ttl_hours is None:
+            hours = current_app.config["BLURBY_TTL_HOURS"]
+        elif ttl_hours.isdecimal() and int(ttl_hours) in ttl_choices():
+            hours = int(ttl_hours)
+        else:
+            return invalid_ttl()
         # Browsers send Origin with form posts; fall back to this host for
         # clients that don't (curl, scripts) and for the "null" origin that
         # browsers send from privacy-sensitive contexts.
@@ -41,7 +111,15 @@ def index():
         # 256 random bits, as 64 hex characters: the same format as before
         sha_link = secrets.token_hex(32)
         creator = current_username()
-        new_data = Data(data=posted_data, sha_link=sha_link, creator=creator)
+        now = datetime.now()
+        new_data = Data(
+            data=posted_data,
+            sha_link=sha_link,
+            creator=creator,
+            timestamp=now,
+            expires_at=now + timedelta(hours=hours),
+            read_once=bool(request.form.get("read_once")),
+        )
         try:
             db.session.add(new_data)
             db.session.commit()
@@ -51,6 +129,8 @@ def index():
                 username=current_username(),
                 sha_link=sha_link,
                 url=url,
+                expires=new_data.expires_at,
+                read_once=new_data.read_once,
             )
         except Exception:
             # Log the error with its traceback and show a generic error page
@@ -68,6 +148,8 @@ def index():
         return render_template(
             "main.html",
             username=current_username(),
+            ttl_choices=ttl_choices(),
+            default_ttl=current_app.config["BLURBY_TTL_HOURS"],
         )
 
 
@@ -87,27 +169,98 @@ def secret_too_long(error=None):
 def read(sha_link):
     data = db.session.get(Data, sha_link)
     # Expired secrets stay in the DB until the next cleanup pass; don't show them.
-    if data and datetime.now() < data.timestamp + secret_ttl():
-        logger.info(f"{current_username()} requested a sha link")
-        return render_template(
-            "read_link.html",
-            username=current_username(),
-            retrieved_message=data.data,
-            time=data.timestamp,
-            sha_link=data.sha_link,
-            ttl=data.timestamp + secret_ttl(),
-            creator=data.creator,
-            event_history=data.event_history,
+    if data is None or datetime.now() >= data.expiry:
+        return not_found()
+    if data.burnt_at:
+        logger.info(f"{current_username()} opened the receipt of a burnt secret")
+        return receipt(data)
+    if data.read_once:
+        # Opening the link (GET, or HEAD from previewers) never shows or burns
+        # a read-once secret; only the Reveal button's POST does.
+        logger.info(f"{current_username()} opened a read-once sha link")
+        return render_template("reveal.html", username=current_username(), secret=data)
+    logger.info(f"{current_username()} requested a sha link")
+    return show_secret(data, data.data)
+
+
+def show_secret(data, text, shown_once=False):
+    return render_template(
+        "read_link.html",
+        username=current_username(),
+        retrieved_message=text,
+        time=data.timestamp,
+        sha_link=data.sha_link,
+        ttl=data.expiry,
+        creator=data.creator,
+        shown_once=shown_once,
+    )
+
+
+def burn_statement(sha_link, now, reader):
+    """Burn the secret unless it's burnt already: the condition makes it atomic."""
+    return (
+        db.update(Data)
+        .where(Data.sha_link == sha_link, Data.burnt_at.is_(None))
+        .values(
+            data="",
+            burnt_at=now,
+            burnt_by=None if reader == "anonymous" else reader,
         )
-    else:
-        # return 404
-        logger.info(f"{current_username()} requested a non-existent sha link")
-        return render_template(
-            "msg.html",
-            username=current_username(),
-            msg_title="⚠ No message found!",
-            msg="Message might be too old and deleted or it never existed. - Check your link.",
-        ), 404
+    )
+
+
+@bp.route("/burn/<string:sha_link>", methods=["POST"])
+def burn(sha_link):
+    """Delete a secret's text for good, leaving a read receipt (#26).
+
+    POST only: link previewers and scanners open links with GET or HEAD.
+    """
+    secret = db.session.get(Data, sha_link)
+    now = datetime.now()
+    if secret is None or now >= secret.expiry:
+        return not_found()
+    reader = current_username()
+    # Only the first burn counts.
+    try:
+        burnt = db.session.execute(burn_statement(sha_link, now, reader)).rowcount == 1
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        logger.exception(f"⚠ Error burning a secret! Action called by {reader}")
+        return database_error()
+    db.session.refresh(secret)
+    if burnt:
+        logger.info(f"{reader} burnt a secret")
+    return receipt(secret, just_burnt=burnt)
+
+
+@bp.route("/reveal/<string:sha_link>", methods=["POST"])
+def reveal(sha_link):
+    """Show a read-once secret and burn it in the same step (#27).
+
+    POST only: link previewers and scanners open links with GET or HEAD.
+    """
+    secret = db.session.get(Data, sha_link)
+    now = datetime.now()
+    if secret is None or now >= secret.expiry:
+        return not_found()
+    if not secret.read_once:
+        return redirect(url_for(".read", sha_link=sha_link), 303)
+    text = secret.data
+    reader = current_username()
+    # Of simultaneous reveals, only the one whose burn succeeds shows the text.
+    try:
+        burnt = db.session.execute(burn_statement(sha_link, now, reader)).rowcount == 1
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        logger.exception(f"⚠ Error revealing a secret! Action called by {reader}")
+        return database_error()
+    if not burnt:
+        db.session.refresh(secret)
+        return receipt(secret)
+    logger.info(f"{reader} revealed a read-once secret, which burnt it")
+    return show_secret(secret, text, shown_once=True)
 
 
 @bp.route("/delete/<string:sha_link>", methods=["GET", "POST"])
@@ -190,6 +343,7 @@ def about():
     return render_template(
         "about.html",
         username=current_username(),
-        ttl=secret_ttl(),
+        default_ttl=current_app.config["BLURBY_TTL_HOURS"],
+        max_ttl=current_app.config["BLURBY_MAX_TTL_HOURS"],
         version=BLURBY_VERSION,
     )

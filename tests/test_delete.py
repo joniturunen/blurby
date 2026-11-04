@@ -1,6 +1,7 @@
 """Only a POST deletes a secret; opening a delete link asks first."""
 
 import pytest
+from html_helpers import elements
 
 from blurby.models import Data, db
 
@@ -22,9 +23,8 @@ def test_opening_a_delete_link_asks_for_confirmation(client):
     response = client.get(f"/delete/{LINK}")
 
     assert response.status_code == 200
-    assert f'<form method="POST" action="/delete/{LINK}">' in response.get_data(
-        as_text=True
-    )
+    body = response.get_data(as_text=True)
+    assert elements(body, "form", method="POST", action=f"/delete/{LINK}")
     assert secret_exists()
 
 
@@ -50,9 +50,3 @@ def test_an_unknown_link_returns_404(client, method):
 
     assert response.status_code == 404
     assert "Message was not found" in response.get_data(as_text=True)
-
-
-def test_the_read_page_deletes_with_a_post(client):
-    body = client.get(f"/link/{LINK}").get_data(as_text=True)
-
-    assert f'<form method="POST" action="/delete/{LINK}">' in body

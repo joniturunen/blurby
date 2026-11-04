@@ -34,15 +34,20 @@ def test_a_failed_save_logs_neither_the_secret_nor_its_link(broken_app, caplog):
 
 
 @pytest.mark.parametrize(
-    ("path", "route"),
-    [("/link/", "/link/<string:sha_link>"), ("/delete/", "/delete/<string:sha_link>")],
+    ("method", "path", "route"),
+    [
+        ("GET", "/link/", "/link/<string:sha_link>"),
+        ("GET", "/delete/", "/delete/<string:sha_link>"),
+        ("POST", "/burn/", "/burn/<string:sha_link>"),
+        ("POST", "/reveal/", "/reveal/<string:sha_link>"),
+    ],
 )
 def test_a_failed_request_logs_its_route_but_not_the_link(
-    broken_app, caplog, path, route
+    broken_app, caplog, method, path, route
 ):
     with caplog.at_level(logging.INFO):
-        response = broken_app.test_client().get(path + "c" * 64)
+        response = broken_app.test_client().open(path + "c" * 64, method=method)
 
     assert response.status_code == 500
-    assert f"Exception on {route} [GET]" in caplog.text
+    assert f"Exception on {route} [{method}]" in caplog.text
     assert not LINK.search(caplog.text)

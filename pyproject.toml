@@ -2,7 +2,7 @@
 name = "blurby"
 # The single source of the version: the app reads it from the installed package
 # metadata and the Docker publish workflow from this file.
-version = "0.3.1"
+version = "0.4.0"
 description = "A small Flask app for sharing short-lived secrets via SHA-256 links."
 requires-python = ">=3.14"
 dependencies = [

@@ -14,4 +14,11 @@ def test_about_shows_neither_request_headers_nor_the_database(app):
     assert "sqlite:" not in body
     # What visitors need is still there.
     assert __version__ in body
-    assert "TTL value" in body
+    assert "Default TTL" in body
+
+
+def test_about_credits_the_photo(app):
+    body = app.test_client().get("/about").get_data(as_text=True)
+
+    assert "krakenimages" in body
+    assert "Unsplash" in body

@@ -5,6 +5,8 @@ import threading
 import time
 from datetime import datetime
 
+import sqlalchemy as sa
+
 from blurby.config import secret_ttl
 from blurby.models import Data, db
 
@@ -12,18 +14,22 @@ logger = logging.getLogger(__name__)
 
 
 def delete_expired():
-    """Delete secrets older than the TTL and return how many were removed.
+    """Delete secrets past their expiry and return how many were removed.
 
-    Must run inside an application context.
+    A secret expires at its own expires_at, or, without one (written before
+    0.4.0), the default TTL after its creation, like Data.expiry. Must run
+    inside an application context.
     """
-    cutoff = datetime.now() - secret_ttl()
-    logger.info(f"Checking for older than \033[1m{cutoff}\033[0m data entries...")
-    result = db.session.execute(db.delete(Data).where(Data.timestamp < cutoff))
+    now = datetime.now()
+    logger.info(f"Checking for data entries that expired before \033[1m{now}\033[0m...")
+    expired = sa.or_(
+        Data.expires_at < now,
+        sa.and_(Data.expires_at.is_(None), Data.timestamp < now - secret_ttl()),
+    )
+    result = db.session.execute(db.delete(Data).where(expired))
     db.session.commit()
     if result.rowcount:
-        logger.info(
-            f"Cleaned up {result.rowcount} data entries older than \033[1m{cutoff}\033[0m!"
-        )
+        logger.info(f"Cleaned up {result.rowcount} expired data entries!")
     return result.rowcount
 
 
