@@ -192,6 +192,7 @@ class TestBase(unittest.TestCase):
 
     def test_find_rejects_a_non_alphanumeric_sha(self):
         response = self.app.post("/find", data={"sha_link": "../" + "a" * 61})
+        self.assertEqual(response.status_code, 400)
         self.assertIn("Invalid link", response.get_data(as_text=True))
 
     def test_find_with_a_wrong_length_sha_returns_404(self):

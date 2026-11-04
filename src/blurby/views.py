@@ -159,7 +159,7 @@ def find():
                     username=current_username(),
                     msg_title="⚠ Invalid link!",
                     msg="The link you entered is not valid, please try again.",
-                )
+                ), 400
         else:
             # Error message since the sha is not valid or not found
             return render_template(
