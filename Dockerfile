@@ -29,14 +29,13 @@ RUN uv sync --locked --no-dev --no-install-project
 COPY src ./src
 RUN uv sync --locked --no-dev --no-editable
 
-# /blurby is the runtime directory: the log file is written here and the
-# default database lives in /blurby/data
+# /blurby is the runtime directory; the default database lives in /blurby/data.
+# Blurby logs to stdout (`docker logs`), so there is no log volume.
 WORKDIR /blurby
-RUN mkdir -p /blurby/data/logs
+RUN mkdir -p /blurby/data
 
 # Define volumes
 VOLUME /blurby/data/
-VOLUME /blurby/data/logs/
 
 # Creates a non-root user with an explicit UID and adds permission to access the /blurby folder
 # For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers
