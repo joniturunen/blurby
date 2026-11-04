@@ -102,7 +102,7 @@ def read(sha_link):
         ), 404
 
 
-@bp.route("/delete/<string:sha_link>")
+@bp.route("/delete/<string:sha_link>", methods=["GET", "POST"])
 def delete(sha_link):
     data_to_delete = db.session.get(Data, sha_link)
     if data_to_delete is None:
@@ -113,6 +113,13 @@ def delete(sha_link):
             msg_title="⚠ There was an error!",
             msg="Message was not found - maybe it was already deleted?",
         ), 404
+    # Opening a delete link (GET, or HEAD from link checkers and previewers)
+    # only asks for confirmation; deleting takes a POST.
+    if request.method != "POST":
+        logger.info(f"{current_username()} opened a delete link")
+        return render_template(
+            "confirm_delete.html", username=current_username(), sha_link=sha_link
+        )
     try:
         db.session.delete(data_to_delete)
         db.session.commit()

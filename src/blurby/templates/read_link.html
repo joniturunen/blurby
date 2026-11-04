@@ -14,7 +14,7 @@
     <textarea name="data" id="data" rows="12" maxlength="16384" disabled>{{ retrieved_message }}</textarea>
     <p></p>
 </header>
-<form method="GET" action="/delete/{{ sha_link }}">
+<form method="POST" action="/delete/{{ sha_link }}">
     <div class="fields" align="left">
         <div class="field">
             <label for="created">Message was created</label>

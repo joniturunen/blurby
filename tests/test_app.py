@@ -72,7 +72,7 @@ class TestBase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_deletion_of_shalink(self):
-        response = self.app.get(
+        response = self.app.post(
             "/delete/5a96661c68776a977458f2462b24f3f3a6b5dcf4c75f0bdc19c2914812872e7b"
         )
         self.assertEqual(response.status_code, 200)
@@ -138,7 +138,7 @@ class TestBase(unittest.TestCase):
             db.session, "commit", side_effect=SQLAlchemyError("disk I/O error")
         )
         with failing_commit:
-            response = self.app.get(f"/delete/{self.sample_sha}")
+            response = self.app.post(f"/delete/{self.sample_sha}")
         body = response.get_data(as_text=True)
         self.assertIn("There was an error!", body)
         self.assertNotIn("succesfully deleted", body)
