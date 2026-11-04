@@ -37,6 +37,9 @@ def load_config(environ):
         "BLURBY_USERNAME_HEADER": environ.get(
             "BLURBY_USERNAME_HEADER", "username"
         ).strip(),
+        # The most secrets Blurby stores, so that its database can't fill the
+        # disk; 0 means no limit.
+        "BLURBY_MAX_SECRETS": max(int(environ.get("BLURBY_MAX_SECRETS", "10000")), 0),
         # Absolute, because Flask-SQLAlchemy resolves a relative SQLite path
         # against the Flask instance folder instead of the working directory.
         "SQLALCHEMY_DATABASE_URI": f"sqlite:///{os.path.abspath(db_file)}",

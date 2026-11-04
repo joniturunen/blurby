@@ -66,6 +66,7 @@ def check_preconditions(app):
                 \n{' ' * 42}- BLURBY_DB_FILE = {db_file} \
                 \n{' ' * 42}- BLURBY_CLEANUP_INTERVAL = {app.config['BLURBY_CLEANUP_INTERVAL']} \
                 \n{' ' * 42}- BLURBY_USERNAME_HEADER = {app.config['BLURBY_USERNAME_HEADER']} \
+                \n{' ' * 42}- BLURBY_MAX_SECRETS = {app.config['BLURBY_MAX_SECRETS']} \
                 \033[0m"
     )
 
