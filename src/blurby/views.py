@@ -16,8 +16,13 @@ logger = logging.getLogger(__name__)
 
 
 def current_username():
-    """Return the user named by the `username` request header, or "anonymous"."""
-    return request.headers.get("username") or "anonymous"
+    """Return the user named by the BLURBY_USERNAME_HEADER request header.
+
+    The header is `username` by default. Without it, or with the setting
+    empty, the user is "anonymous".
+    """
+    header = current_app.config["BLURBY_USERNAME_HEADER"]
+    return (header and request.headers.get(header)) or "anonymous"
 
 
 @bp.before_request
