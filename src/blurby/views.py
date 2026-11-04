@@ -87,7 +87,7 @@ def secret_too_long(error=None):
 def read(sha_link):
     data = db.session.get(Data, sha_link)
     # Expired secrets stay in the DB until the next cleanup pass; don't show them.
-    if data and datetime.now() < data.timestamp + secret_ttl():
+    if data and datetime.now() < data.expiry:
         logger.info(f"{current_username()} requested a sha link")
         return render_template(
             "read_link.html",
@@ -95,7 +95,7 @@ def read(sha_link):
             retrieved_message=data.data,
             time=data.timestamp,
             sha_link=data.sha_link,
-            ttl=data.timestamp + secret_ttl(),
+            ttl=data.expiry,
             creator=data.creator,
             event_history=data.event_history,
         )

@@ -1,5 +1,6 @@
 import logging
 import signal
+import sqlite3
 import sys
 
 import pytest
@@ -72,6 +73,36 @@ def test_keeps_an_existing_db_file(make_file_app, tmp_path):
 
     with app.app_context():
         assert db.session.get(Data, "kept") is not None
+
+
+def test_upgrades_the_schema_of_an_existing_db_file(make_file_app, tmp_path):
+    from test_migrate import SCHEMA_0_3
+
+    db_file = tmp_path / "sqlite.db"
+    with sqlite3.connect(db_file) as conn:
+        conn.execute(SCHEMA_0_3)
+    conn.close()
+    app = make_file_app(db_file)
+
+    check_preconditions(app)
+
+    with app.app_context():
+        names = {column["name"] for column in sa.inspect(db.engine).get_columns("data")}
+    assert {"expires_at", "read_once", "burnt_at", "burnt_by"} <= names
+
+
+def test_exits_when_the_schema_cannot_be_upgraded(make_file_app, tmp_path, monkeypatch):
+    app = make_file_app(tmp_path / "sqlite.db")
+
+    def fail():
+        raise sa.exc.OperationalError("ALTER TABLE", {}, Exception("read-only"))
+
+    monkeypatch.setattr("blurby.main.upgrade_schema", fail)
+
+    with pytest.raises(SystemExit) as excinfo:
+        check_preconditions(app)
+
+    assert excinfo.value.code == 1
 
 
 def test_creates_a_relative_db_file_in_the_working_directory(monkeypatch, tmp_path):
