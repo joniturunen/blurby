@@ -9,6 +9,15 @@ services:
       - BLURBY_DB_FILE=/blurby/data/sqlite.db
       - BLURBY_TTL_HOURS=48
       - BLURBY_THREADS=6
+    # Blurby writes only to /blurby/data, and needs no Linux capabilities.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    # Behind a proxy on this host, publish to it only: "127.0.0.1:8080:8080"
     ports:
       - "8080:8080"
     volumes:
