@@ -8,6 +8,9 @@
     <h1>Your secret's link</h1>
     <p>Send the link to the reader. Anyone with the link can read the secret until {{ expires|when }}.</p>
   </header>
+  {% if read_once %}
+  <p>🔥 This secret burns after reading: it's shown once, then deleted. Opening the link is safe, for you too. The secret is shown only when the reader clicks <strong>Reveal</strong>, and afterwards the link shows when it was read.</p>
+  {% endif %}
   <label for="sha_link">Link</label>
   <div role="group">
     <input type="text" id="sha_link" value="{{ url }}link/{{ sha_link }}" readonly>

@@ -15,6 +15,10 @@
       <option value="{{ hours }}"{% if hours == default_ttl %} selected{% endif %}>{{ hours|hours }}</option>
       {% endfor %}
     </select>
+    <label>
+      <input type="checkbox" name="read_once" value="1">
+      Burn after reading: show the secret only once
+    </label>
     <button type="submit">Generate link</button>
   </form>
 </article>

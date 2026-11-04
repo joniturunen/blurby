@@ -118,6 +118,7 @@ def index():
             creator=creator,
             timestamp=now,
             expires_at=now + timedelta(hours=hours),
+            read_once=bool(request.form.get("read_once")),
         )
         try:
             db.session.add(new_data)
@@ -129,6 +130,7 @@ def index():
                 sha_link=sha_link,
                 url=url,
                 expires=new_data.expires_at,
+                read_once=new_data.read_once,
             )
         except Exception:
             # Log the error with its traceback and show a generic error page
@@ -172,16 +174,38 @@ def read(sha_link):
     if data.burnt_at:
         logger.info(f"{current_username()} opened the receipt of a burnt secret")
         return receipt(data)
+    if data.read_once:
+        # Opening the link (GET, or HEAD from previewers) never shows or burns
+        # a read-once secret; only the Reveal button's POST does.
+        logger.info(f"{current_username()} opened a read-once sha link")
+        return render_template("reveal.html", username=current_username(), secret=data)
     logger.info(f"{current_username()} requested a sha link")
+    return show_secret(data, data.data)
+
+
+def show_secret(data, text, shown_once=False):
     return render_template(
         "read_link.html",
         username=current_username(),
-        retrieved_message=data.data,
+        retrieved_message=text,
         time=data.timestamp,
         sha_link=data.sha_link,
         ttl=data.expiry,
         creator=data.creator,
-        event_history=data.event_history,
+        shown_once=shown_once,
+    )
+
+
+def burn_statement(sha_link, now, reader):
+    """Burn the secret unless it's burnt already: the condition makes it atomic."""
+    return (
+        db.update(Data)
+        .where(Data.sha_link == sha_link, Data.burnt_at.is_(None))
+        .values(
+            data="",
+            burnt_at=now,
+            burnt_by=None if reader == "anonymous" else reader,
+        )
     )
 
 
@@ -196,18 +220,9 @@ def burn(sha_link):
     if secret is None or now >= secret.expiry:
         return not_found()
     reader = current_username()
-    # Only the first burn counts: the condition makes it a single atomic step.
-    burn_it = (
-        db.update(Data)
-        .where(Data.sha_link == sha_link, Data.burnt_at.is_(None))
-        .values(
-            data="",
-            burnt_at=now,
-            burnt_by=None if reader == "anonymous" else reader,
-        )
-    )
+    # Only the first burn counts.
     try:
-        burnt = db.session.execute(burn_it).rowcount == 1
+        burnt = db.session.execute(burn_statement(sha_link, now, reader)).rowcount == 1
         db.session.commit()
     except Exception:
         db.session.rollback()
@@ -217,6 +232,35 @@ def burn(sha_link):
     if burnt:
         logger.info(f"{reader} burnt a secret")
     return receipt(secret, just_burnt=burnt)
+
+
+@bp.route("/reveal/<string:sha_link>", methods=["POST"])
+def reveal(sha_link):
+    """Show a read-once secret and burn it in the same step (#27).
+
+    POST only: link previewers and scanners open links with GET or HEAD.
+    """
+    secret = db.session.get(Data, sha_link)
+    now = datetime.now()
+    if secret is None or now >= secret.expiry:
+        return not_found()
+    if not secret.read_once:
+        return redirect(url_for(".read", sha_link=sha_link), 303)
+    text = secret.data
+    reader = current_username()
+    # Of simultaneous reveals, only the one whose burn succeeds shows the text.
+    try:
+        burnt = db.session.execute(burn_statement(sha_link, now, reader)).rowcount == 1
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        logger.exception(f"⚠ Error revealing a secret! Action called by {reader}")
+        return database_error()
+    if not burnt:
+        db.session.refresh(secret)
+        return receipt(secret)
+    logger.info(f"{reader} revealed a read-once secret, which burnt it")
+    return show_secret(secret, text, shown_once=True)
 
 
 @bp.route("/delete/<string:sha_link>", methods=["GET", "POST"])

@@ -39,6 +39,7 @@ def test_a_failed_save_logs_neither_the_secret_nor_its_link(broken_app, caplog):
         ("GET", "/link/", "/link/<string:sha_link>"),
         ("GET", "/delete/", "/delete/<string:sha_link>"),
         ("POST", "/burn/", "/burn/<string:sha_link>"),
+        ("POST", "/reveal/", "/reveal/<string:sha_link>"),
     ],
 )
 def test_a_failed_request_logs_its_route_but_not_the_link(

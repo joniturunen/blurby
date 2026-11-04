@@ -42,4 +42,51 @@ function setUpCopyButtons(root) {
   }
 }
 
-setUpCopyButtons(document);
+// While a read-once secret is on screen (<article data-shown-once>), ask before
+// the reader leaves: it won't be shown again. Browsers show their own generic
+// wording, so the page itself explains why, and they ask only after the reader
+// has interacted with the page.
+function warnBeforeLeaving(root) {
+  if (!root.querySelector("[data-shown-once]")) return;
+  window.addEventListener("beforeunload", (event) => {
+    event.preventDefault();
+    event.returnValue = ""; // for older browsers
+  });
+}
+
+// <form data-reveal> reveals a read-once secret in place, with fetch, so that
+// the Reveal click counts as interaction for the leave-page prompt. Without
+// JavaScript, or if the request fails, the form posts as usual.
+function setUpReveal(root) {
+  for (const form of root.querySelectorAll("form[data-reveal]")) {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      form.querySelector("button")?.setAttribute("aria-busy", "true");
+      let page;
+      try {
+        const response = await fetch(form.action, { method: "POST" });
+        page = new DOMParser().parseFromString(await response.text(), "text/html");
+      } catch {
+        form.submit(); // doesn't fire this handler again
+        return;
+      }
+      const main = page.querySelector("main");
+      if (!main) {
+        // Not a Blurby page (a proxy's error page, say): let the browser show it.
+        form.submit();
+        return;
+      }
+      document.querySelector("main").replaceWith(main);
+      document.title = page.title;
+      setUp(main);
+    });
+  }
+}
+
+function setUp(root) {
+  setUpCopyButtons(root);
+  setUpReveal(root);
+  warnBeforeLeaving(root);
+}
+
+setUp(document);

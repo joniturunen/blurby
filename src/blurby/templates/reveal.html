@@ -1,0 +1,24 @@
+{% extends 'base_structure.html' %}
+
+{% block title %}A secret, shown only once{% endblock %}
+
+{% block main %}
+<article>
+  <header>
+    <h1>🔥 A secret, shown only once</h1>
+  </header>
+  <p>This secret can be shown only once. When you reveal it, it's deleted, and the link will afterwards only show when it was read. Have a place ready to keep it, or copy it right away.</p>
+  <table>
+    <tbody>
+      <tr><th scope="row">Created</th><td>{{ secret.timestamp|when }}</td></tr>
+      <tr><th scope="row">Kept until</th><td>{{ secret.expiry|when }}</td></tr>
+      <tr><th scope="row">Creator</th><td>{{ secret.creator }}</td></tr>
+    </tbody>
+  </table>
+  <footer>
+    <form method="POST" action="/reveal/{{ secret.sha_link }}" data-reveal>
+      <button type="submit">Reveal the secret</button>
+    </form>
+  </footer>
+</article>
+{% endblock %}
