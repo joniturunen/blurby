@@ -8,6 +8,7 @@
     <h1>The secret</h1>
   </header>
   <textarea id="secret" rows="10" readonly aria-label="The secret">{{ retrieved_message }}</textarea>
+  <button type="button" data-copy="#secret" hidden>Copy the secret</button>
   <table>
     <tbody>
       <tr><th scope="row">Created</th><td>{{ time.strftime('%Y-%m-%d %H:%M') }}</td></tr>
