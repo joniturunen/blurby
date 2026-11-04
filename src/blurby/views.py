@@ -4,7 +4,7 @@ import logging
 import secrets
 from datetime import datetime
 
-from flask import Blueprint, current_app, redirect, render_template, request, url_for
+from flask import Blueprint, redirect, render_template, request, url_for
 
 from blurby.config import secret_ttl
 from blurby.models import Data, db
@@ -159,6 +159,4 @@ def about():
         username=current_username(),
         ttl=secret_ttl(),
         version=BLURBY_VERSION,
-        db_conf=str(current_app.config["SQLALCHEMY_DATABASE_URI"]),
-        request_headers=request.headers,
     )
