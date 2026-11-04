@@ -64,10 +64,9 @@ def main():
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.FileHandler("./blurby.log"),
-            logging.StreamHandler(sys.stdout),
-        ],
+        # stdout only: Docker keeps it (`docker logs`) and rotates it; a log file
+        # inside the container would only grow.
+        handlers=[logging.StreamHandler(sys.stdout)],
     )
     app = create_app()
     host_ipaddr = app.config["BLURBY_HOST_IP"]
