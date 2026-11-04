@@ -31,3 +31,18 @@ def test_a_failed_save_logs_neither_the_secret_nor_its_link(broken_app, caplog):
     assert "Error adding new data entry" in caplog.text  # the error is still logged
     assert "TOP-SECRET-VALUE" not in caplog.text
     assert not LINK.search(caplog.text)
+
+
+@pytest.mark.parametrize(
+    ("path", "route"),
+    [("/link/", "/link/<string:sha_link>"), ("/delete/", "/delete/<string:sha_link>")],
+)
+def test_a_failed_request_logs_its_route_but_not_the_link(
+    broken_app, caplog, path, route
+):
+    with caplog.at_level(logging.INFO):
+        response = broken_app.test_client().get(path + "c" * 64)
+
+    assert response.status_code == 500
+    assert f"Exception on {route} [GET]" in caplog.text
+    assert not LINK.search(caplog.text)
