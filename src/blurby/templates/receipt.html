@@ -1,0 +1,30 @@
+{% extends 'base_structure.html' %}
+
+{% block title %}Read and burnt{% endblock %}
+
+{% block main %}
+<article>
+  <header>
+    {% if just_burnt %}
+    <h1>🔥 Burnt</h1>
+    <p>The secret's text is gone for good.</p>
+    {% else %}
+    <h1>🔥 Read and burnt</h1>
+    <p>This secret's text is gone for good.</p>
+    {% endif %}
+  </header>
+  <p>
+    The secret was read and burnt on {{ secret.burnt_at|when }}{% if secret.burnt_by %} by {{ secret.burnt_by }}{% endif %}.
+    Its link shows this receipt until {{ secret.expiry|when }}.
+  </p>
+  <table>
+    <tbody>
+      <tr><th scope="row">Created</th><td>{{ secret.timestamp|when }}</td></tr>
+      <tr><th scope="row">Creator</th><td>{{ secret.creator }}</td></tr>
+    </tbody>
+  </table>
+  <footer>
+    <a href="/">Create a new secret</a>
+  </footer>
+</article>
+{% endblock %}

@@ -43,6 +43,35 @@ def show_time(value):
     )
 
 
+def not_found():
+    logger.info(f"{current_username()} requested a non-existent sha link")
+    return render_template(
+        "msg.html",
+        username=current_username(),
+        msg_title="⚠ No message found!",
+        msg="Message might be too old and deleted or it never existed. - Check your link.",
+    ), 404
+
+
+def database_error():
+    return render_template(
+        "msg.html",
+        username=current_username(),
+        msg_title="⚠ There was an error!",
+        msg="There was a problem connecting the database",
+    ), 500
+
+
+def receipt(secret, just_burnt=False):
+    """The read receipt of a burnt secret: 410 Gone, or 200 right after burning."""
+    return render_template(
+        "receipt.html",
+        username=current_username(),
+        secret=secret,
+        just_burnt=just_burnt,
+    ), 200 if just_burnt else 410
+
+
 def invalid_ttl():
     return render_template(
         "msg.html",
@@ -138,27 +167,56 @@ def secret_too_long(error=None):
 def read(sha_link):
     data = db.session.get(Data, sha_link)
     # Expired secrets stay in the DB until the next cleanup pass; don't show them.
-    if data and datetime.now() < data.expiry:
-        logger.info(f"{current_username()} requested a sha link")
-        return render_template(
-            "read_link.html",
-            username=current_username(),
-            retrieved_message=data.data,
-            time=data.timestamp,
-            sha_link=data.sha_link,
-            ttl=data.expiry,
-            creator=data.creator,
-            event_history=data.event_history,
+    if data is None or datetime.now() >= data.expiry:
+        return not_found()
+    if data.burnt_at:
+        logger.info(f"{current_username()} opened the receipt of a burnt secret")
+        return receipt(data)
+    logger.info(f"{current_username()} requested a sha link")
+    return render_template(
+        "read_link.html",
+        username=current_username(),
+        retrieved_message=data.data,
+        time=data.timestamp,
+        sha_link=data.sha_link,
+        ttl=data.expiry,
+        creator=data.creator,
+        event_history=data.event_history,
+    )
+
+
+@bp.route("/burn/<string:sha_link>", methods=["POST"])
+def burn(sha_link):
+    """Delete a secret's text for good, leaving a read receipt (#26).
+
+    POST only: link previewers and scanners open links with GET or HEAD.
+    """
+    secret = db.session.get(Data, sha_link)
+    now = datetime.now()
+    if secret is None or now >= secret.expiry:
+        return not_found()
+    reader = current_username()
+    # Only the first burn counts: the condition makes it a single atomic step.
+    burn_it = (
+        db.update(Data)
+        .where(Data.sha_link == sha_link, Data.burnt_at.is_(None))
+        .values(
+            data="",
+            burnt_at=now,
+            burnt_by=None if reader == "anonymous" else reader,
         )
-    else:
-        # return 404
-        logger.info(f"{current_username()} requested a non-existent sha link")
-        return render_template(
-            "msg.html",
-            username=current_username(),
-            msg_title="⚠ No message found!",
-            msg="Message might be too old and deleted or it never existed. - Check your link.",
-        ), 404
+    )
+    try:
+        burnt = db.session.execute(burn_it).rowcount == 1
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        logger.exception(f"⚠ Error burning a secret! Action called by {reader}")
+        return database_error()
+    db.session.refresh(secret)
+    if burnt:
+        logger.info(f"{reader} burnt a secret")
+    return receipt(secret, just_burnt=burnt)
 
 
 @bp.route("/delete/<string:sha_link>", methods=["GET", "POST"])

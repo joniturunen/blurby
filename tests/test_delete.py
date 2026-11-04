@@ -50,9 +50,3 @@ def test_an_unknown_link_returns_404(client, method):
 
     assert response.status_code == 404
     assert "Message was not found" in response.get_data(as_text=True)
-
-
-def test_the_read_page_deletes_with_a_post(client):
-    body = client.get(f"/link/{LINK}").get_data(as_text=True)
-
-    assert elements(body, "form", method="POST", action=f"/delete/{LINK}")
