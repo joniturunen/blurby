@@ -1,5 +1,6 @@
 """Application configuration, read from BLURBY_* environment variables."""
 
+import os
 from datetime import timedelta
 
 from flask import current_app
@@ -16,7 +17,9 @@ def load_config(environ):
         "BLURBY_THREADS": int(environ.get("BLURBY_THREADS", "8")),
         "BLURBY_HOST_IP": environ.get("BLURBY_HOST_IP", "0.0.0.0"),
         "BLURBY_CLEANUP_INTERVAL": int(environ.get("BLURBY_CLEANUP_INTERVAL", "60")),
-        "SQLALCHEMY_DATABASE_URI": f"sqlite:///{db_file}",
+        # Absolute, because Flask-SQLAlchemy resolves a relative SQLite path
+        # against the Flask instance folder instead of the working directory.
+        "SQLALCHEMY_DATABASE_URI": f"sqlite:///{os.path.abspath(db_file)}",
         "SQLALCHEMY_TRACK_MODIFICATIONS": False,
     }
 

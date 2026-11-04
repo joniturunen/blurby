@@ -34,6 +34,20 @@ def test_environment_variables_override_the_defaults():
     assert config["BLURBY_CLEANUP_INTERVAL"] == 5
 
 
+def test_a_relative_db_file_is_resolved_against_the_working_directory(
+    monkeypatch, tmp_path
+):
+    # Flask-SQLAlchemy 3 would otherwise resolve a relative SQLite path
+    # against the Flask instance folder, not where Blurby checked for it.
+    monkeypatch.chdir(tmp_path)
+
+    config = load_config({"BLURBY_DB_FILE": "./data/sqlite.db"})
+
+    assert config["SQLALCHEMY_DATABASE_URI"] == (
+        f"sqlite:///{tmp_path / 'data' / 'sqlite.db'}"
+    )
+
+
 def test_non_numeric_ttl_is_rejected():
     with pytest.raises(ValueError):
         load_config({"BLURBY_TTL_HOURS": "two days"})

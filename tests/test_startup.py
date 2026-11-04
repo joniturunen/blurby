@@ -5,6 +5,7 @@ import pytest
 import sqlalchemy as sa
 from flask import Flask
 
+import blurby
 from blurby.main import check_preconditions, main
 from blurby.models import Data, db
 
@@ -69,6 +70,21 @@ def test_keeps_an_existing_db_file(make_file_app, tmp_path):
 
     with app.app_context():
         assert db.session.get(Data, "kept") is not None
+
+
+def test_creates_a_relative_db_file_in_the_working_directory(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "data").mkdir()
+    monkeypatch.setenv("BLURBY_DB_FILE", "./data/sqlite.db")
+    app = blurby.create_app()
+
+    try:
+        check_preconditions(app)
+    finally:
+        with app.app_context():
+            db.engine.dispose()
+
+    assert (tmp_path / "data" / "sqlite.db").exists()
 
 
 def test_exits_when_the_db_cannot_be_created(make_file_app, tmp_path, monkeypatch):
