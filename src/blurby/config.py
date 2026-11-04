@@ -32,6 +32,14 @@ def load_config(environ):
         "BLURBY_THREADS": int(environ.get("BLURBY_THREADS", "8")),
         "BLURBY_HOST_IP": environ.get("BLURBY_HOST_IP", "0.0.0.0"),
         "BLURBY_CLEANUP_INTERVAL": int(environ.get("BLURBY_CLEANUP_INTERVAL", "60")),
+        # The request header that names the user, set by an auth proxy in front
+        # of Blurby. Empty: Blurby ignores usernames, and everyone is anonymous.
+        "BLURBY_USERNAME_HEADER": environ.get(
+            "BLURBY_USERNAME_HEADER", "username"
+        ).strip(),
+        # The most secrets Blurby stores, so that its database can't fill the
+        # disk; 0 means no limit.
+        "BLURBY_MAX_SECRETS": max(int(environ.get("BLURBY_MAX_SECRETS", "10000")), 0),
         # Absolute, because Flask-SQLAlchemy resolves a relative SQLite path
         # against the Flask instance folder instead of the working directory.
         "SQLALCHEMY_DATABASE_URI": f"sqlite:///{os.path.abspath(db_file)}",

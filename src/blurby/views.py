@@ -16,8 +16,36 @@ logger = logging.getLogger(__name__)
 
 
 def current_username():
-    """Return the user named by the `username` request header, or "anonymous"."""
-    return request.headers.get("username") or "anonymous"
+    """Return the user named by the BLURBY_USERNAME_HEADER request header.
+
+    The header is `username` by default. Without it, or with the setting
+    empty, the user is "anonymous".
+    """
+    header = current_app.config["BLURBY_USERNAME_HEADER"]
+    return (header and request.headers.get(header)) or "anonymous"
+
+
+@bp.before_request
+def refuse_posts_from_other_sites():
+    """Refuse a form post that a page on another site sent (CSRF).
+
+    Browsers tell where a request comes from in Sec-Fetch-Site: Blurby's own
+    forms and its reveal fetch send "same-origin", and a page on another site
+    sends "same-site" or "cross-site". Requests without the header (curl,
+    scripts, browsers from before 2023) go through. Not a check of Origin
+    against Host: behind a proxy, Host can name the proxy's upstream instead.
+    """
+    if request.method != "POST":
+        return None
+    if request.headers.get("Sec-Fetch-Site") not in ("same-site", "cross-site"):
+        return None
+    logger.info(f"{current_username()} sent a form from another site; refused it")
+    return render_template(
+        "msg.html",
+        username=current_username(),
+        msg_title="⚠ Request refused!",
+        msg="Blurby only accepts forms sent from its own pages.",
+    ), 403
 
 
 @bp.app_template_filter("hours")
@@ -81,6 +109,31 @@ def invalid_ttl():
     ), 400
 
 
+def is_full():
+    """Whether Blurby holds BLURBY_MAX_SECRETS secrets already (0: no limit).
+
+    Burnt receipts count, and so do expired secrets until the next cleanup
+    pass. Simultaneous posts can go a few over the limit.
+    """
+    limit = current_app.config["BLURBY_MAX_SECRETS"]
+    stored = db.session.scalar(db.select(db.func.count()).select_from(Data))
+    return bool(limit) and stored >= limit
+
+
+def blurby_is_full():
+    limit = current_app.config["BLURBY_MAX_SECRETS"]
+    logger.warning(
+        f"Refused a secret from {current_username()}: Blurby holds {limit} "
+        "secrets, its BLURBY_MAX_SECRETS limit"
+    )
+    return render_template(
+        "msg.html",
+        username=current_username(),
+        msg_title="⚠ Blurby is full!",
+        msg="Blurby holds as many secrets as it may. Try again when older ones have expired.",
+    ), 507
+
+
 @bp.route("/", methods=["POST", "GET"])
 def index():
     if request.method == "POST":
@@ -121,6 +174,8 @@ def index():
             read_once=bool(request.form.get("read_once")),
         )
         try:
+            if is_full():
+                return blurby_is_full()
             db.session.add(new_data)
             db.session.commit()
             logger.info(f"{current_username()} submitted a secret")

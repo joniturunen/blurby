@@ -246,6 +246,14 @@ def test_main_logs_to_stdout_and_writes_no_log_file(run_main, tmp_path, capsys):
     assert not (tmp_path / "blurby.log").exists()
 
 
+def test_main_logs_the_security_notes(run_main, capsys):
+    run_main()
+
+    out = capsys.readouterr().out
+    assert "request header as the user's name" in out
+    assert "Serve it over HTTPS" in out
+
+
 def test_main_stops_on_sigterm_like_on_ctrl_c(run_main):
     # In Docker, Blurby is PID 1, which ignores signals it has no handler for:
     # without one, `docker stop` waits and then kills it with exit code 137 (#31).

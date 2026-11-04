@@ -29,3 +29,37 @@ def elements(body, tag, **attrs):
         for found in collector.found
         if all(found.get(name) == value for name, value in attrs.items())
     ]
+
+
+class _TextareaReader(HTMLParser):
+    def __init__(self, id):
+        super().__init__(convert_charrefs=True)
+        self.id = id
+        self.inside = False
+        self.text = None
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "textarea" and dict(attrs).get("id") == self.id:
+            self.inside = True
+            self.text = ""
+
+    def handle_endtag(self, tag):
+        if tag == "textarea":
+            self.inside = False
+
+    def handle_data(self, data):
+        if self.inside:
+            self.text += data
+
+
+def textarea_value(body, id):
+    """Return the text a browser shows in the <textarea id=...> of `body`.
+
+    Like a browser's HTML parser, it turns line breaks into "\\n" and drops a
+    line break right after the start tag. Python's parser does neither.
+    """
+    reader = _TextareaReader(id)
+    reader.feed(body)
+    reader.close()
+    text = reader.text.replace("\r\n", "\n").replace("\r", "\n")
+    return text.removeprefix("\n")

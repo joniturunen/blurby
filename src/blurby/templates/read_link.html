@@ -10,7 +10,10 @@
     <p>🔥 This secret has been burnt: it won't be shown again. Copy it before you leave this page.</p>
     {% endif %}
   </header>
-  <textarea id="secret" rows="10" readonly aria-label="The secret">{{ retrieved_message }}</textarea>
+  {# The HTML parser drops a line break right after <textarea>, so the template
+     starts with one, and a secret that starts with a line break keeps it. #}
+  <textarea id="secret" rows="10" readonly aria-label="The secret">
+{{ retrieved_message }}</textarea>
   <button type="button" data-copy="#secret" hidden>Copy the secret</button>
   <table>
     <tbody>
