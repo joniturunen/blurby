@@ -6,7 +6,7 @@ from datetime import datetime
 
 from flask import Blueprint, redirect, render_template, request, url_for
 
-from blurby.config import secret_ttl
+from blurby.config import MAX_SECRET_LENGTH, secret_ttl
 from blurby.models import Data, db
 from blurby.version import BLURBY_VERSION
 
@@ -23,6 +23,9 @@ def current_username():
 def index():
     if request.method == "POST":
         posted_data = request.form["data"]
+        # Browsers count a line break as one character but send it as "\r\n".
+        if len(posted_data.replace("\r\n", "\n")) > MAX_SECRET_LENGTH:
+            return secret_too_long()
         # Browsers send Origin with form posts; fall back to this host for
         # clients that don't (curl, scripts).
         origin = request.headers.get("Origin")
@@ -58,6 +61,18 @@ def index():
             "main.html",
             username=current_username(),
         )
+
+
+@bp.app_errorhandler(413)
+def secret_too_long(error=None):
+    """Reject a secret over the size limit, whether Flask or the view caught it."""
+    logger.info(f"{current_username()} submitted a secret over the size limit")
+    return render_template(
+        "msg.html",
+        username=current_username(),
+        msg_title="⚠ Secret too long!",
+        msg=f"A secret can be at most {MAX_SECRET_LENGTH} characters.",
+    ), 413
 
 
 @bp.route("/link/<string:sha_link>")
