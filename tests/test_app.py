@@ -122,6 +122,7 @@ class TestBase(unittest.TestCase):
         )
         with failing_commit, self.assertLogs("blurby.views", "ERROR"):
             response = self.app.post("/", data={"data": "lost"}, headers=self.ORIGIN)
+        self.assertEqual(response.status_code, 500)
         body = response.get_data(as_text=True)
         self.assertIn("There was a problem connecting the database", body)
         self.assertNotIn("/link/", body)
@@ -137,10 +138,14 @@ class TestBase(unittest.TestCase):
         failing_commit = mock.patch.object(
             db.session, "commit", side_effect=SQLAlchemyError("disk I/O error")
         )
-        with failing_commit:
+        with failing_commit, self.assertLogs("blurby.views", "ERROR"):
             response = self.app.post(f"/delete/{self.sample_sha}")
+        self.assertEqual(response.status_code, 500)
         body = response.get_data(as_text=True)
         self.assertIn("There was an error!", body)
+        # A database error, not a missing secret
+        self.assertIn("There was a problem connecting the database", body)
+        self.assertNotIn("Message was not found", body)
         self.assertNotIn("succesfully deleted", body)
 
     def test_viewing_a_secret_shows_its_content_and_creator(self):

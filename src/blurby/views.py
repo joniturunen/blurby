@@ -54,7 +54,7 @@ def index():
                 username=current_username(),
                 msg_title="⚠ There was an error!",
                 msg="There was a problem connecting the database",
-            )
+            ), 500
     else:
         logger.info(f"{current_username()} requested the default page")
         return render_template(
@@ -131,12 +131,15 @@ def delete(sha_link):
             msg="You can create a new secret!",
         )
     except Exception:
+        logger.exception(
+            f"⚠ Error deleting a secret from the database! Action called by {current_username()}"
+        )
         return render_template(
             "msg.html",
             username=current_username(),
             msg_title="⚠ There was an error!",
-            msg="Message was not found - maybe it was already deleted?",
-        )
+            msg="There was a problem connecting the database",
+        ), 500
 
 
 @bp.route("/find", methods=["POST", "GET"])
