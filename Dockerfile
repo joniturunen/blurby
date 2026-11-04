@@ -1,7 +1,7 @@
 # Two stages: the first installs Blurby and its dependencies into /opt/venv
 # with uv; the image itself gets only that virtualenv, without uv or the
 # build files.
-FROM python:3.14-slim-trixie AS build
+FROM python:3.14-alpine3.24 AS build
 
 # Install a pinned uv binary from its official image
 COPY --from=ghcr.io/astral-sh/uv:0.13.1 /uv /bin/uv
@@ -25,7 +25,7 @@ COPY src ./src
 RUN uv sync --locked --no-dev --no-editable
 
 
-FROM python:3.14-slim-trixie
+FROM python:3.14-alpine3.24
 
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -39,7 +39,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 # dependencies. The non-root user has an explicit UID: a mounted data folder
 # must be writable by UID 5678. It owns only the data folder.
 RUN python -m pip uninstall --yes --root-user-action ignore pip \
-    && adduser -u 5678 --disabled-password --gecos "" appuser \
+    && addgroup -g 5678 appuser \
+    && adduser -u 5678 -G appuser -D -g "" appuser \
     && mkdir -p /blurby/data \
     && chown appuser:appuser /blurby/data
 
