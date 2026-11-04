@@ -23,6 +23,15 @@ class BlurbyFlask(Flask):
         self.logger.error(f"Exception on {rule} [{request.method}]", exc_info=exc_info)
 
 
+def set_privacy_headers(response):
+    """Keep pages out of caches and keep their URLs, which hold links, private."""
+    response.headers["Referrer-Policy"] = "no-referrer"
+    # Pages can show a secret or its link; static files can be cached as before.
+    if response.mimetype == "text/html":
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 def create_app(test_config=None):
     """Create the Blurby app, configured from BLURBY_* environment variables.
 
@@ -34,4 +43,5 @@ def create_app(test_config=None):
         app.config.from_mapping(test_config)
     db.init_app(app)
     app.register_blueprint(bp)
+    app.after_request(set_privacy_headers)
     return app
