@@ -1,0 +1,41 @@
+/* Blurby's additions to Pico CSS (pico.violet.min.css, v2.1.1).
+   Load nothing from other sites here: no web fonts, no remote url()s. */
+
+/* Let the menu wrap on phones instead of overflowing. */
+body > header nav,
+body > header nav ul {
+  flex-wrap: wrap;
+}
+
+/* A link ID is 64 characters with no break opportunities. */
+code {
+  overflow-wrap: anywhere;
+}
+
+.brand {
+  text-decoration: none;
+}
+
+.user {
+  color: var(--pico-muted-color);
+}
+
+article > header h1 {
+  margin-bottom: 0;
+  font-size: 1.5rem;
+}
+
+article > header p {
+  margin: 0.5rem 0 0;
+  color: var(--pico-muted-color);
+}
+
+/* A secret is shown as it was typed: keep its spacing and line breaks. */
+textarea[readonly] {
+  font-family: var(--pico-font-family-monospace);
+}
+
+body > footer {
+  text-align: center;
+  color: var(--pico-muted-color);
+}

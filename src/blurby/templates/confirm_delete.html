@@ -1,19 +1,15 @@
 {% extends 'base_structure.html' %}
 
-<!-- BODY/HEADER  -->
-{% block header %}
-<a href="#" class="logo">⚠ Delete this message?</a>
+{% block title %}Delete this message?{% endblock %}
 
-{% endblock %}
-
-<!-- BODY/MAIN -->
 {% block main %}
-<header class="major">
-    <h4>The message will be deleted for good.</h4>
-</header>
-<form method="POST" action="/delete/{{ sha_link }}">
-    <ul class="actions">
-        <li><input type="submit" value="Delete the message" /></li>
-    </ul>
-</form>
+<article>
+  <header>
+    <h1>⚠ Delete this message?</h1>
+  </header>
+  <p>The message will be deleted for good.</p>
+  <form method="POST" action="/delete/{{ sha_link }}">
+    <button type="submit">Delete the message</button>
+  </form>
+</article>
 {% endblock %}

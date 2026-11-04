@@ -1,4 +1,5 @@
 import pytest
+from html_helpers import elements
 
 from blurby.models import Data
 
@@ -32,6 +33,5 @@ def test_a_secret_keeps_its_surrounding_whitespace(app):
 def test_the_form_requires_a_secret(app):
     body = app.test_client().get("/").get_data(as_text=True)
 
-    assert (
-        '<textarea name="data" id="data" rows="12" maxlength="16384" required>' in body
-    )
+    [textarea] = elements(body, "textarea", name="data")
+    assert "required" in textarea

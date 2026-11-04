@@ -14,7 +14,7 @@ def test_the_secret_is_read_only_not_disabled(app):
 
     body = app.test_client().get(f"/link/{LINK}").get_data(as_text=True)
 
-    [secret] = elements(body, "textarea", id="data")
+    [secret] = elements(body, "textarea", id="secret")
     assert "readonly" in secret
     assert "disabled" not in secret
 

@@ -1,66 +1,34 @@
-<!DOCTYPE HTML>
-<html>
-	<head>
-		<title>🙊 Blurby: Share your secrets</title>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-		<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
-		<noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/noscript.css') }}" /></noscript>
-	</head>
-	<body class="is-preload">
-
-		<!-- Wrapper -->
-			<div id="wrapper" class="fade-in">
-
-				<!-- Intro -->					
-            	{% block intro %}{% endblock %}
-
-
-				<!-- Header -->
-				<header id="header">
-					{% block header %}{% endblock %}
-				</header>
-				
-				<!-- Nav -->
-					<nav id="nav">
-						<ul class="links">
-							<li><a href="/">Create a secret</a></li>
-							<li><a href="/find">Find a secret with SHA</a></li>
-							<li><a href="/about"><span>About</span></a></li>
-						</ul>
-						<ul class="welcome">
-							<li>🤫 {{ username }}</li>
-						</ul>
-					</nav>
-
-				<!-- Main -->
-					<div id="main">
-
-						<!-- Featured Post -->
-							<article class="post featured">
-                {% block main %}{% endblock %}
-							</article>
-
-					</div>
-
-				<!-- Footer -->
-				{% block footer %}{% endblock %}
-				<!-- Copyright -->
-				<div id="copyright">
-					<ul><li>&copy; Blurby </li><li>Design: <a href="https://html5up.net">HTML5 UP</a></li></ul>
-				</div>
-        
-
-			</div>
-
-		<!-- Scripts -->
-			<script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
-			<script src="{{ url_for('static', filename='js/jquery.scrollex.min.js') }}"></script>
-			<script src="{{ url_for('static', filename='js/jquery.scrolly.min.js') }}"></script>
-			<script src="{{ url_for('static', filename='js/browser.min.js') }}"></script>
-			<script src="{{ url_for('static', filename='js/breakpoints.min.js') }}"></script>
-			<script src="{{ url_for('static', filename='js/main.js') }}"></script>
-			<script src="{{ url_for('static', filename='js/copy_link.js') }}"></script>
-
-	</body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>{% block title %}Share a secret{% endblock %} · Blurby</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pico.violet.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/blurby.css') }}">
+    <script src="{{ url_for('static', filename='js/blurby.js') }}" defer></script>
+  </head>
+  <body>
+    <header class="container">
+      <nav>
+        <ul>
+          <li><a href="/" class="brand"><strong>🙊 Blurby</strong></a></li>
+        </ul>
+        <ul>
+          <li><a href="/">Create</a></li>
+          <li><a href="/find">Find</a></li>
+          <li><a href="/about">About</a></li>
+          <li><span class="user">🤫 {{ username }}</span></li>
+        </ul>
+      </nav>
+    </header>
+    <main class="container">
+      {% block main %}{% endblock %}
+    </main>
+    <footer class="container">
+      <small>Blurby keeps a secret only until it expires.</small>
+    </footer>
+  </body>
 </html>
