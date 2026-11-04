@@ -72,7 +72,7 @@ class TestBase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_deletion_of_shalink(self):
-        response = self.app.get(
+        response = self.app.post(
             "/delete/5a96661c68776a977458f2462b24f3f3a6b5dcf4c75f0bdc19c2914812872e7b"
         )
         self.assertEqual(response.status_code, 200)
@@ -122,6 +122,7 @@ class TestBase(unittest.TestCase):
         )
         with failing_commit, self.assertLogs("blurby.views", "ERROR"):
             response = self.app.post("/", data={"data": "lost"}, headers=self.ORIGIN)
+        self.assertEqual(response.status_code, 500)
         body = response.get_data(as_text=True)
         self.assertIn("There was a problem connecting the database", body)
         self.assertNotIn("/link/", body)
@@ -137,10 +138,14 @@ class TestBase(unittest.TestCase):
         failing_commit = mock.patch.object(
             db.session, "commit", side_effect=SQLAlchemyError("disk I/O error")
         )
-        with failing_commit:
-            response = self.app.get(f"/delete/{self.sample_sha}")
+        with failing_commit, self.assertLogs("blurby.views", "ERROR"):
+            response = self.app.post(f"/delete/{self.sample_sha}")
+        self.assertEqual(response.status_code, 500)
         body = response.get_data(as_text=True)
         self.assertIn("There was an error!", body)
+        # A database error, not a missing secret
+        self.assertIn("There was a problem connecting the database", body)
+        self.assertNotIn("Message was not found", body)
         self.assertNotIn("succesfully deleted", body)
 
     def test_viewing_a_secret_shows_its_content_and_creator(self):
@@ -187,6 +192,7 @@ class TestBase(unittest.TestCase):
 
     def test_find_rejects_a_non_alphanumeric_sha(self):
         response = self.app.post("/find", data={"sha_link": "../" + "a" * 61})
+        self.assertEqual(response.status_code, 400)
         self.assertIn("Invalid link", response.get_data(as_text=True))
 
     def test_find_with_a_wrong_length_sha_returns_404(self):

@@ -7,6 +7,13 @@ from flask import current_app
 
 DEFAULT_DB_FILE = "/blurby/data/sqlite.db"
 
+# The longest secret, in characters; the form's textarea has the same maxlength.
+MAX_SECRET_LENGTH = 16384
+# The largest request body, in bytes. The form is URL-encoded, so a character
+# can take up to 9 bytes (3 UTF-8 bytes, each sent as %XX): 16384 characters
+# can be 147456 bytes.
+MAX_REQUEST_BYTES = 150 * 1024
+
 
 def load_config(environ):
     """Build the Flask config mapping from the given environment mapping."""
@@ -24,6 +31,8 @@ def load_config(environ):
         # messages, which end up in the logs.
         "SQLALCHEMY_ENGINE_OPTIONS": {"hide_parameters": True},
         "SQLALCHEMY_TRACK_MODIFICATIONS": False,
+        # Flask answers larger requests with 413 before reading them.
+        "MAX_CONTENT_LENGTH": MAX_REQUEST_BYTES,
     }
 
 

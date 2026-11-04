@@ -4,9 +4,9 @@ import logging
 import secrets
 from datetime import datetime
 
-from flask import Blueprint, current_app, redirect, render_template, request, url_for
+from flask import Blueprint, redirect, render_template, request, url_for
 
-from blurby.config import secret_ttl
+from blurby.config import MAX_SECRET_LENGTH, secret_ttl
 from blurby.models import Data, db
 from blurby.version import BLURBY_VERSION
 
@@ -23,6 +23,16 @@ def current_username():
 def index():
     if request.method == "POST":
         posted_data = request.form["data"]
+        if not posted_data.strip():
+            return render_template(
+                "msg.html",
+                username=current_username(),
+                msg_title="⚠ Empty secret!",
+                msg="Write the secret first, then generate its link.",
+            ), 400
+        # Browsers count a line break as one character but send it as "\r\n".
+        if len(posted_data.replace("\r\n", "\n")) > MAX_SECRET_LENGTH:
+            return secret_too_long()
         # Browsers send Origin with form posts; fall back to this host for
         # clients that don't (curl, scripts).
         origin = request.headers.get("Origin")
@@ -51,13 +61,25 @@ def index():
                 username=current_username(),
                 msg_title="⚠ There was an error!",
                 msg="There was a problem connecting the database",
-            )
+            ), 500
     else:
         logger.info(f"{current_username()} requested the default page")
         return render_template(
             "main.html",
             username=current_username(),
         )
+
+
+@bp.app_errorhandler(413)
+def secret_too_long(error=None):
+    """Reject a secret over the size limit, whether Flask or the view caught it."""
+    logger.info(f"{current_username()} submitted a secret over the size limit")
+    return render_template(
+        "msg.html",
+        username=current_username(),
+        msg_title="⚠ Secret too long!",
+        msg=f"A secret can be at most {MAX_SECRET_LENGTH} characters.",
+    ), 413
 
 
 @bp.route("/link/<string:sha_link>")
@@ -87,7 +109,7 @@ def read(sha_link):
         ), 404
 
 
-@bp.route("/delete/<string:sha_link>")
+@bp.route("/delete/<string:sha_link>", methods=["GET", "POST"])
 def delete(sha_link):
     data_to_delete = db.session.get(Data, sha_link)
     if data_to_delete is None:
@@ -98,6 +120,13 @@ def delete(sha_link):
             msg_title="⚠ There was an error!",
             msg="Message was not found - maybe it was already deleted?",
         ), 404
+    # Opening a delete link (GET, or HEAD from link checkers and previewers)
+    # only asks for confirmation; deleting takes a POST.
+    if request.method != "POST":
+        logger.info(f"{current_username()} opened a delete link")
+        return render_template(
+            "confirm_delete.html", username=current_username(), sha_link=sha_link
+        )
     try:
         db.session.delete(data_to_delete)
         db.session.commit()
@@ -109,12 +138,15 @@ def delete(sha_link):
             msg="You can create a new secret!",
         )
     except Exception:
+        logger.exception(
+            f"⚠ Error deleting a secret from the database! Action called by {current_username()}"
+        )
         return render_template(
             "msg.html",
             username=current_username(),
             msg_title="⚠ There was an error!",
-            msg="Message was not found - maybe it was already deleted?",
-        )
+            msg="There was a problem connecting the database",
+        ), 500
 
 
 @bp.route("/find", methods=["POST", "GET"])
@@ -134,7 +166,7 @@ def find():
                     username=current_username(),
                     msg_title="⚠ Invalid link!",
                     msg="The link you entered is not valid, please try again.",
-                )
+                ), 400
         else:
             # Error message since the sha is not valid or not found
             return render_template(
@@ -159,6 +191,4 @@ def about():
         username=current_username(),
         ttl=secret_ttl(),
         version=BLURBY_VERSION,
-        db_conf=str(current_app.config["SQLALCHEMY_DATABASE_URI"]),
-        request_headers=request.headers,
     )

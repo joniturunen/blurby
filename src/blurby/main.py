@@ -64,10 +64,9 @@ def main():
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.FileHandler("./blurby.log"),
-            logging.StreamHandler(sys.stdout),
-        ],
+        # stdout only: Docker keeps it (`docker logs`) and rotates it; a log file
+        # inside the container would only grow.
+        handlers=[logging.StreamHandler(sys.stdout)],
     )
     app = create_app()
     host_ipaddr = app.config["BLURBY_HOST_IP"]
@@ -87,7 +86,14 @@ def main():
     else:
         from waitress import serve
 
-        serve(app, host=host_ipaddr, port=8080, threads=app.config["BLURBY_THREADS"])
+        serve(
+            app,
+            host=host_ipaddr,
+            port=8080,
+            threads=app.config["BLURBY_THREADS"],
+            # Refuse larger bodies up front instead of buffering them to disk.
+            max_request_body_size=app.config["MAX_CONTENT_LENGTH"],
+        )
 
 
 if __name__ == "__main__":

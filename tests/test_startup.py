@@ -6,6 +6,7 @@ import sqlalchemy as sa
 from flask import Flask
 
 import blurby
+from blurby.config import MAX_REQUEST_BYTES
 from blurby.main import check_preconditions, main
 from blurby.models import Data, db
 
@@ -127,7 +128,7 @@ def test_reports_a_created_db_only_after_creating_it(
 @pytest.fixture
 def run_main(monkeypatch, tmp_path):
     """Run main() against a temp DB, recording instead of starting servers/threads."""
-    monkeypatch.chdir(tmp_path)  # main() logs to ./blurby.log
+    monkeypatch.chdir(tmp_path)  # catch any file main() might write
     monkeypatch.setenv("BLURBY_DB_FILE", str(tmp_path / "sqlite.db"))
     monkeypatch.setenv("BLURBY_HOST_IP", "127.0.0.1")
     monkeypatch.setenv("BLURBY_THREADS", "3")
@@ -168,7 +169,14 @@ def test_main_serves_with_waitress_on_port_8080(run_main):
     calls, crews = run_main()
 
     app, kwargs = calls["serve"]
-    assert kwargs == {"host": "127.0.0.1", "port": 8080, "threads": 3}
+    assert kwargs == {
+        "host": "127.0.0.1",
+        "port": 8080,
+        "threads": 3,
+        # Without it, waitress buffers bodies up to 1 GiB to disk before Flask
+        # can reject them.
+        "max_request_body_size": MAX_REQUEST_BYTES,
+    }
     assert crews == [app]
     assert "run" not in calls
 
@@ -191,3 +199,12 @@ def test_main_creates_the_database_before_serving(run_main, tmp_path):
     run_main()
 
     assert (tmp_path / "sqlite.db").exists()
+
+
+def test_main_logs_to_stdout_and_writes_no_log_file(run_main, tmp_path, capsys):
+    # In Docker, `docker logs` already keeps stdout; a file in the container's
+    # filesystem just grows (#24).
+    run_main()
+
+    assert "Starting Blurby" in capsys.readouterr().out
+    assert not (tmp_path / "blurby.log").exists()
