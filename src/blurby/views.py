@@ -23,6 +23,13 @@ def current_username():
 def index():
     if request.method == "POST":
         posted_data = request.form["data"]
+        if not posted_data.strip():
+            return render_template(
+                "msg.html",
+                username=current_username(),
+                msg_title="⚠ Empty secret!",
+                msg="Write the secret first, then generate its link.",
+            ), 400
         # Browsers count a line break as one character but send it as "\r\n".
         if len(posted_data.replace("\r\n", "\n")) > MAX_SECRET_LENGTH:
             return secret_too_long()
