@@ -83,10 +83,48 @@ function setUpReveal(root) {
   }
 }
 
+// <button data-theme-switch hidden> switches between light and dark mode, and
+// saves the choice for theme.js. A choice that matches the system's setting is
+// forgotten instead, so the page follows the system again.
+const THEME_KEY = "blurby-theme";
+const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+
+function systemTheme() {
+  return systemDark.matches ? "dark" : "light";
+}
+
+function setUpThemeSwitch() {
+  const button = document.querySelector("button[data-theme-switch]");
+  if (!button) return;
+  const page = document.documentElement;
+  const show = () => {
+    const dark = (page.dataset.theme || systemTheme()) === "dark";
+    button.setAttribute("aria-pressed", String(dark));
+    button.title = dark ? "Switch to light mode" : "Switch to dark mode";
+  };
+  button.addEventListener("click", () => {
+    const theme = button.getAttribute("aria-pressed") === "true" ? "light" : "dark";
+    const chosen = theme !== systemTheme();
+    if (chosen) page.dataset.theme = theme;
+    else delete page.dataset.theme;
+    try {
+      if (chosen) localStorage.setItem(THEME_KEY, theme);
+      else localStorage.removeItem(THEME_KEY);
+    } catch {
+      // Not saved: the choice lasts until the reader leaves the page.
+    }
+    show();
+  });
+  systemDark.addEventListener("change", show);
+  show();
+  button.hidden = false;
+}
+
 function setUp(root) {
   setUpCopyButtons(root);
   setUpReveal(root);
   warnBeforeLeaving(root);
 }
 
+setUpThemeSwitch();
 setUp(document);

@@ -84,3 +84,33 @@ body > footer {
 time {
   white-space: nowrap;
 }
+
+/* The light and dark mode switch in the menu: a moon in light mode, a sun in
+   dark mode. */
+button.theme-switch {
+  display: inline-flex;
+  margin: 0;
+  padding: 0.25rem;
+  border: none;
+  background: none;
+  color: var(--pico-muted-color);
+}
+
+button.theme-switch:hover {
+  color: var(--pico-primary-hover);
+}
+
+.theme-switch svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.theme-switch[aria-pressed="true"] .moon,
+.theme-switch[aria-pressed="false"] .sun {
+  display: none;
+}
