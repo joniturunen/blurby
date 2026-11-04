@@ -20,6 +20,9 @@ def load_config(environ):
         # Absolute, because Flask-SQLAlchemy resolves a relative SQLite path
         # against the Flask instance folder instead of the working directory.
         "SQLALCHEMY_DATABASE_URI": f"sqlite:///{os.path.abspath(db_file)}",
+        # Keep SQL parameters (a secret's text, its link) out of database error
+        # messages, which end up in the logs.
+        "SQLALCHEMY_ENGINE_OPTIONS": {"hide_parameters": True},
         "SQLALCHEMY_TRACK_MODIFICATIONS": False,
     }
 
