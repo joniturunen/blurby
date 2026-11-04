@@ -25,7 +25,10 @@ class BlurbyFlask(Flask):
 
 def set_privacy_headers(response):
     """Keep pages out of caches and keep their URLs, which hold links, private."""
-    response.headers["Referrer-Policy"] = "no-referrer"
+    # Send a Referer only to Blurby itself, never to other sites. Not
+    # no-referrer: under it, browsers send `Origin: null` with the page's own
+    # form posts, and Blurby builds the new secret's link from Origin.
+    response.headers["Referrer-Policy"] = "same-origin"
     # Pages can show a secret or its link; static files can be cached as before.
     if response.mimetype == "text/html":
         response.headers["Cache-Control"] = "no-store"
