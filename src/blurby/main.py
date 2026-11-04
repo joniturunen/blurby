@@ -61,6 +61,7 @@ def check_preconditions(app):
     logger.info(
         f"\033[1mPreconditions check passed with following env values\033[0m:\033[1;32m \
                 \n{' ' * 42}- BLURBY_TTL_HOURS = {app.config['BLURBY_TTL_HOURS']} \
+                \n{' ' * 42}- BLURBY_MAX_TTL_HOURS = {app.config['BLURBY_MAX_TTL_HOURS']} \
                 \n{' ' * 42}- BLURBY_THREADS = {app.config['BLURBY_THREADS']} \
                 \n{' ' * 42}- BLURBY_DB_FILE = {db_file} \
                 \n{' ' * 42}- BLURBY_CLEANUP_INTERVAL = {app.config['BLURBY_CLEANUP_INTERVAL']} \

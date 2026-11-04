@@ -39,3 +39,8 @@ body > footer {
   text-align: center;
   color: var(--pico-muted-color);
 }
+
+/* Keep a date and time on one line. */
+time {
+  white-space: nowrap;
+}

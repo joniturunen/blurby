@@ -9,6 +9,12 @@
   <form method="POST" action="/">
     <label for="data">Secret</label>
     <textarea name="data" id="data" rows="10" maxlength="16384" required autofocus placeholder="Paste or type the secret"></textarea>
+    <label for="ttl_hours">Delete it after</label>
+    <select name="ttl_hours" id="ttl_hours">
+      {% for hours in ttl_choices %}
+      <option value="{{ hours }}"{% if hours == default_ttl %} selected{% endif %}>{{ hours|hours }}</option>
+      {% endfor %}
+    </select>
     <button type="submit">Generate link</button>
   </form>
 </article>

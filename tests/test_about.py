@@ -14,4 +14,4 @@ def test_about_shows_neither_request_headers_nor_the_database(app):
     assert "sqlite:" not in body
     # What visitors need is still there.
     assert __version__ in body
-    assert "TTL value" in body
+    assert "Default TTL" in body

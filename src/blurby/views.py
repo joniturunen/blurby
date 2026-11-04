@@ -2,11 +2,12 @@
 
 import logging
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from flask import Blueprint, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, redirect, render_template, request, url_for
+from markupsafe import Markup
 
-from blurby.config import MAX_SECRET_LENGTH, secret_ttl
+from blurby.config import MAX_SECRET_LENGTH, ttl_choices
 from blurby.models import Data, db
 from blurby.version import BLURBY_VERSION
 
@@ -17,6 +18,38 @@ logger = logging.getLogger(__name__)
 def current_username():
     """Return the user named by the `username` request header, or "anonymous"."""
     return request.headers.get("username") or "anonymous"
+
+
+@bp.app_template_filter("hours")
+def describe_hours(hours):
+    """A TTL in words: "1 hour", "2 days", "1 week"."""
+    unit, count = "hour", hours
+    for name, length in (("week", 168), ("day", 24)):
+        if hours % length == 0:
+            unit, count = name, hours // length
+            break
+    return f"{count} {unit}{'' if count == 1 else 's'}"
+
+
+@bp.app_template_filter("when")
+def show_time(value):
+    """A <time> element for a stored time, with the server's timezone.
+
+    Blurby stores naive local times: UTC in the Docker image.
+    """
+    local = value.astimezone()
+    return Markup('<time datetime="{}">{}</time>').format(
+        local.isoformat(timespec="minutes"), local.strftime("%Y-%m-%d %H:%M %Z")
+    )
+
+
+def invalid_ttl():
+    return render_template(
+        "msg.html",
+        username=current_username(),
+        msg_title="⚠ Invalid TTL!",
+        msg="Choose how long to keep the secret from the list.",
+    ), 400
 
 
 @bp.route("/", methods=["POST", "GET"])
@@ -33,6 +66,14 @@ def index():
         # Browsers count a line break as one character but send it as "\r\n".
         if len(posted_data.replace("\r\n", "\n")) > MAX_SECRET_LENGTH:
             return secret_too_long()
+        # Without a choice (curl, scripts), the default TTL applies.
+        ttl_hours = request.form.get("ttl_hours")
+        if ttl_hours is None:
+            hours = current_app.config["BLURBY_TTL_HOURS"]
+        elif ttl_hours.isdecimal() and int(ttl_hours) in ttl_choices():
+            hours = int(ttl_hours)
+        else:
+            return invalid_ttl()
         # Browsers send Origin with form posts; fall back to this host for
         # clients that don't (curl, scripts) and for the "null" origin that
         # browsers send from privacy-sensitive contexts.
@@ -41,7 +82,14 @@ def index():
         # 256 random bits, as 64 hex characters: the same format as before
         sha_link = secrets.token_hex(32)
         creator = current_username()
-        new_data = Data(data=posted_data, sha_link=sha_link, creator=creator)
+        now = datetime.now()
+        new_data = Data(
+            data=posted_data,
+            sha_link=sha_link,
+            creator=creator,
+            timestamp=now,
+            expires_at=now + timedelta(hours=hours),
+        )
         try:
             db.session.add(new_data)
             db.session.commit()
@@ -51,6 +99,7 @@ def index():
                 username=current_username(),
                 sha_link=sha_link,
                 url=url,
+                expires=new_data.expires_at,
             )
         except Exception:
             # Log the error with its traceback and show a generic error page
@@ -68,6 +117,8 @@ def index():
         return render_template(
             "main.html",
             username=current_username(),
+            ttl_choices=ttl_choices(),
+            default_ttl=current_app.config["BLURBY_TTL_HOURS"],
         )
 
 
@@ -190,6 +241,7 @@ def about():
     return render_template(
         "about.html",
         username=current_username(),
-        ttl=secret_ttl(),
+        default_ttl=current_app.config["BLURBY_TTL_HOURS"],
+        max_ttl=current_app.config["BLURBY_MAX_TTL_HOURS"],
         version=BLURBY_VERSION,
     )

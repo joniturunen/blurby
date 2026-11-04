@@ -13,14 +13,22 @@ MAX_SECRET_LENGTH = 16384
 # can take up to 9 bytes (3 UTF-8 bytes, each sent as %XX): 16384 characters
 # can be 147456 bytes.
 MAX_REQUEST_BYTES = 150 * 1024
+# The TTLs a creator can choose from, in hours, up to BLURBY_MAX_TTL_HOURS:
+# an hour, a day, two days, five days, a week, two weeks.
+TTL_PRESETS_HOURS = (1, 24, 48, 120, 168, 336)
 
 
 def load_config(environ):
     """Build the Flask config mapping from the given environment mapping."""
     db_file = environ.get("BLURBY_DB_FILE", DEFAULT_DB_FILE)
+    ttl_hours = int(environ.get("BLURBY_TTL_HOURS", "48"))
+    # The longest TTL a creator can choose. It defaults to, and is at least,
+    # the default TTL, so an upgrade never lengthens how long secrets are kept.
+    max_ttl_hours = max(int(environ.get("BLURBY_MAX_TTL_HOURS", ttl_hours)), ttl_hours)
     return {
         "BLURBY_DB_FILE": db_file,
-        "BLURBY_TTL_HOURS": int(environ.get("BLURBY_TTL_HOURS", "48")),
+        "BLURBY_TTL_HOURS": ttl_hours,
+        "BLURBY_MAX_TTL_HOURS": max_ttl_hours,
         "BLURBY_THREADS": int(environ.get("BLURBY_THREADS", "8")),
         "BLURBY_HOST_IP": environ.get("BLURBY_HOST_IP", "0.0.0.0"),
         "BLURBY_CLEANUP_INTERVAL": int(environ.get("BLURBY_CLEANUP_INTERVAL", "60")),
@@ -37,5 +45,19 @@ def load_config(environ):
 
 
 def secret_ttl():
-    """How long secrets are kept, from the app's BLURBY_TTL_HOURS setting."""
+    """The default TTL, from the app's BLURBY_TTL_HOURS setting.
+
+    It applies when the creator doesn't choose one, and to secrets without an
+    expiry of their own (from before 0.4.0).
+    """
     return timedelta(hours=current_app.config["BLURBY_TTL_HOURS"])
+
+
+def ttl_choices():
+    """The TTLs, in hours, that a creator can choose from, shortest first.
+
+    The presets up to BLURBY_MAX_TTL_HOURS, plus the default TTL.
+    """
+    cap = current_app.config["BLURBY_MAX_TTL_HOURS"]
+    default = current_app.config["BLURBY_TTL_HOURS"]
+    return sorted({hours for hours in TTL_PRESETS_HOURS if hours <= cap} | {default})

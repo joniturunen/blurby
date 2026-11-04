@@ -11,8 +11,8 @@
   <button type="button" data-copy="#secret" hidden>Copy the secret</button>
   <table>
     <tbody>
-      <tr><th scope="row">Created</th><td>{{ time.strftime('%Y-%m-%d %H:%M') }}</td></tr>
-      <tr><th scope="row">Kept until</th><td>{{ ttl.strftime('%Y-%m-%d %H:%M') }}</td></tr>
+      <tr><th scope="row">Created</th><td>{{ time|when }}</td></tr>
+      <tr><th scope="row">Kept until</th><td>{{ ttl|when }}</td></tr>
       <tr><th scope="row">Creator</th><td>{{ creator }}</td></tr>
       <tr><th scope="row">Link ID</th><td><code>{{ sha_link }}</code></td></tr>
     </tbody>

@@ -12,7 +12,8 @@
   <table>
     <tbody>
       <tr><th scope="row">Version</th><td>{{ version }}</td></tr>
-      <tr><th scope="row">TTL value</th><td>{{ ttl }}</td></tr>
+      <tr><th scope="row">Default TTL</th><td>{{ default_ttl|hours }}</td></tr>
+      <tr><th scope="row">Longest TTL</th><td>{{ max_ttl|hours }}</td></tr>
       <tr><th scope="row">Repository</th><td><a href="https://github.com/joniturunen/blurby">GitHub</a></td></tr>
     </tbody>
   </table>
