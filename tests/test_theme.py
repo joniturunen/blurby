@@ -28,7 +28,7 @@ def test_a_saved_choice_is_applied_before_the_page_is_drawn(app):
     [script] = elements(head, "script", src="/static/js/theme.js")
     assert "defer" not in script
     assert "async" not in script
-    assert head.index("js/theme.js") < head.index("pico.violet.min.css")
+    assert head.index("js/theme.js") < head.index("pico.orange.min.css")
 
 
 @pytest.mark.parametrize("path", PAGES)

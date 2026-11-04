@@ -42,7 +42,7 @@ def test_every_file_a_page_loads_is_served(client, method, path):
     body = client.open(path, method=method, data={"data": "new"}).get_data(as_text=True)
 
     loaded = assets(body)
-    assert any(href.endswith("/pico.violet.min.css") for href in loaded)
+    assert any(href.endswith("/pico.orange.min.css") for href in loaded)
     for href in loaded:
         response = client.get(href)
         assert response.status_code == 200, href
