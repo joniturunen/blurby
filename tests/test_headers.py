@@ -23,12 +23,14 @@ def test_pages_are_not_stored_and_send_no_referrer(client, method, path):
 
     assert response.status_code == 200
     assert response.headers["Cache-Control"] == "no-store"
-    assert response.headers["Referrer-Policy"] == "no-referrer"
+    # Not no-referrer: under it, browsers send `Origin: null` with the page's
+    # own form posts, and the new secret's link became null/link/<link>.
+    assert response.headers["Referrer-Policy"] == "same-origin"
 
 
 def test_static_files_keep_their_caching(client):
     response = client.get("/static/css/main.css")
 
     assert "no-store" not in response.headers.get("Cache-Control", "")
-    assert response.headers["Referrer-Policy"] == "no-referrer"
+    assert response.headers["Referrer-Policy"] == "same-origin"
     response.close()

@@ -27,7 +27,7 @@ jobs:
           version=$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
           echo "BLURBY_VERSION=$version" >> "$GITHUB_ENV"
 
-      - uses: mr-smithers-excellent/docker-build-push@v5
+      - uses: mr-smithers-excellent/docker-build-push@v7
         name: Build & push Docker image
         with:
           image: joniturunen/blurby

@@ -1,4 +1,5 @@
 import logging
+import signal
 import sys
 
 import pytest
@@ -7,7 +8,7 @@ from flask import Flask
 
 import blurby
 from blurby.config import MAX_REQUEST_BYTES
-from blurby.main import check_preconditions, main
+from blurby.main import check_preconditions, main, stop_on_sigterm
 from blurby.models import Data, db
 
 # check_preconditions()
@@ -144,6 +145,9 @@ def run_main(monkeypatch, tmp_path):
     )
     root = logging.getLogger()
     saved_handlers, saved_level = root.handlers[:], root.level
+    # main() installs a SIGTERM handler; give pytest its own back afterwards.
+    monkeypatch.setattr(signal, "signal", signal.signal)
+    saved_sigterm = signal.getsignal(signal.SIGTERM)
 
     def run(*args):
         monkeypatch.setattr(sys, "argv", ["blurby", *args])
@@ -160,6 +164,7 @@ def run_main(monkeypatch, tmp_path):
 
     yield run
 
+    signal.signal(signal.SIGTERM, saved_sigterm)
     for app in crews:
         with app.app_context():
             db.engine.dispose()
@@ -208,3 +213,18 @@ def test_main_logs_to_stdout_and_writes_no_log_file(run_main, tmp_path, capsys):
 
     assert "Starting Blurby" in capsys.readouterr().out
     assert not (tmp_path / "blurby.log").exists()
+
+
+def test_main_stops_on_sigterm_like_on_ctrl_c(run_main):
+    # In Docker, Blurby is PID 1, which ignores signals it has no handler for:
+    # without one, `docker stop` waits and then kills it with exit code 137 (#31).
+    run_main()
+
+    assert signal.getsignal(signal.SIGTERM) is stop_on_sigterm
+
+
+def test_the_sigterm_handler_raises_keyboard_interrupt():
+    # Waitress's server loop catches KeyboardInterrupt and shuts down its
+    # worker threads, and serve() then returns.
+    with pytest.raises(KeyboardInterrupt):
+        stop_on_sigterm(signal.SIGTERM, None)

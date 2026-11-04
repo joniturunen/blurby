@@ -34,9 +34,10 @@ def index():
         if len(posted_data.replace("\r\n", "\n")) > MAX_SECRET_LENGTH:
             return secret_too_long()
         # Browsers send Origin with form posts; fall back to this host for
-        # clients that don't (curl, scripts).
+        # clients that don't (curl, scripts) and for the "null" origin that
+        # browsers send from privacy-sensitive contexts.
         origin = request.headers.get("Origin")
-        url = f"{origin}/" if origin else request.host_url
+        url = f"{origin}/" if origin and origin != "null" else request.host_url
         # 256 random bits, as 64 hex characters: the same format as before
         sha_link = secrets.token_hex(32)
         creator = current_username()

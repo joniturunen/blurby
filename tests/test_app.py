@@ -98,6 +98,18 @@ class TestBase(unittest.TestCase):
         sha = Data.query.filter_by(data="no origin").one().sha_link
         self.assertIn(f"http://localhost/link/{sha}", response.get_data(as_text=True))
 
+    def test_posting_a_secret_with_a_null_origin_links_to_this_host(self):
+        # Browsers send `Origin: null` from privacy-sensitive contexts, such as
+        # a page with `Referrer-Policy: no-referrer` or a sandboxed frame.
+        response = self.app.post(
+            "/", data={"data": "null origin"}, headers={"Origin": "null"}
+        )
+        self.assertEqual(response.status_code, 200)
+        sha = Data.query.filter_by(data="null origin").one().sha_link
+        body = response.get_data(as_text=True)
+        self.assertIn(f"http://localhost/link/{sha}", body)
+        self.assertNotIn("null/link/", body)
+
     def test_identical_secrets_posted_at_the_same_instant_get_distinct_links(self):
         # Links must not be derived from the content and the clock.
         with mock.patch("time.time", return_value=1_700_000_000.0):

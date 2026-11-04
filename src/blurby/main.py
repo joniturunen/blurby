@@ -2,6 +2,7 @@
 
 import logging
 import os
+import signal
 import sys
 
 from blurby import __version__, create_app
@@ -59,6 +60,17 @@ def check_preconditions(app):
     )
 
 
+def stop_on_sigterm(signum, frame):
+    """Stop the server on SIGTERM (`docker stop`) the way Ctrl+C does.
+
+    In Docker, Blurby is PID 1, and Linux ignores signals that PID 1 has no
+    handler for, so without this `docker stop` waits and then kills Blurby.
+    Waitress catches KeyboardInterrupt, shuts down its worker threads and
+    returns from serve().
+    """
+    raise KeyboardInterrupt
+
+
 def main():
     """Run Blurby: waitress on port 8080, or the Flask debug server with --debug."""
     logging.basicConfig(
@@ -78,6 +90,7 @@ def main():
     check_preconditions(app)
     # Start clean_up crew process in background
     CleanUpCrew(app)
+    signal.signal(signal.SIGTERM, stop_on_sigterm)
     # If commandline argument --debug is used, run the app in debug mode
     if len(sys.argv) > 1 and sys.argv[1] == "--debug":
         # deepcode ignore RunWithDebugTrue: <please specify a reason of ignoring this>
