@@ -1,22 +1,17 @@
-# For more information, please refer to https://aka.ms/vscode-docker-python
-FROM python:3.14-slim-trixie
+# Two stages: the first installs Blurby and its dependencies into /opt/venv
+# with uv; the image itself gets only that virtualenv, without uv or the
+# build files.
+FROM python:3.14-slim-trixie AS build
 
 # Install a pinned uv binary from its official image
 COPY --from=ghcr.io/astral-sh/uv:0.13.1 /uv /bin/uv
 
-# Keeps Python from generating .pyc files in the container
-ENV PYTHONDONTWRITEBYTECODE=1
-
-# Turns off buffering for easier container logging
-ENV PYTHONUNBUFFERED=1
-
-# Install dependencies into /opt/venv using the image's own Python. The
-# virtualenv lives outside /blurby so it stays root-owned and out of the volumes.
+# Install into /opt/venv with the base image's own Python, which the second
+# stage has at the same path.
 ENV UV_PROJECT_ENVIRONMENT=/opt/venv \
     UV_PYTHON_DOWNLOADS=never \
     UV_LINK_MODE=copy \
     UV_NO_CACHE=1
-ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /build
 
@@ -29,21 +24,34 @@ RUN uv sync --locked --no-dev --no-install-project
 COPY src ./src
 RUN uv sync --locked --no-dev --no-editable
 
-# /blurby is the runtime directory; the default database lives in /blurby/data.
+
+FROM python:3.14-slim-trixie
+
+# Keeps Python from generating .pyc files in the container
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Turns off buffering for easier container logging
+ENV PYTHONUNBUFFERED=1
+
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Blurby doesn't need pip, which the base image brings along with its own
+# dependencies. The non-root user has an explicit UID: a mounted data folder
+# must be writable by UID 5678. It owns only the data folder.
+RUN python -m pip uninstall --yes --root-user-action ignore pip \
+    && adduser -u 5678 --disabled-password --gecos "" appuser \
+    && mkdir -p /blurby/data \
+    && chown appuser:appuser /blurby/data
+
+# The virtualenv stays root-owned, so Blurby can't change its own code.
+COPY --from=build /opt/venv /opt/venv
+
+# /blurby is the runtime directory; the database lives in /blurby/data.
 # Blurby logs to stdout (`docker logs`), so there is no log volume.
 WORKDIR /blurby
-RUN mkdir -p /blurby/data
-
-# Define volumes
 VOLUME /blurby/data/
 
-# Creates a non-root user with an explicit UID and adds permission to access the /blurby folder
-# For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers
-RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /blurby
+# Numeric, so that Kubernetes' runAsNonRoot can check it
+USER 5678
 
-# Add permissions to /data for user appuser
-RUN chown -R appuser /blurby/data
-USER appuser
-
-# During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
 CMD ["blurby"]
