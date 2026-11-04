@@ -1,8 +1,12 @@
 """Every page renders on the shared layout, and everything it loads is served."""
 
+import re
+from pathlib import Path
+
 import pytest
 from html_helpers import elements
 
+import blurby
 from blurby.models import Data, db
 
 LINK = "e" * 64
@@ -43,6 +47,25 @@ def test_every_file_a_page_loads_is_served(client, method, path):
         response = client.get(href)
         assert response.status_code == 200, href
         response.close()
+
+
+TEMPLATES = sorted(
+    (Path(blurby.__file__).parent / "templates").glob("*.html"), key=lambda p: p.name
+)
+# What the Content-Security-Policy blocks: inline scripts and event handlers,
+# and inline styles.
+INLINE_SCRIPT = re.compile(r"<script(?![^>]*\bsrc=)[^>]*>", re.IGNORECASE)
+EVENT_HANDLER = re.compile(r"<[^>]*\son[a-z]+\s*=", re.IGNORECASE)
+INLINE_STYLE = re.compile(r"<style\b|<[^>]*\sstyle\s*=", re.IGNORECASE)
+
+
+@pytest.mark.parametrize("path", TEMPLATES, ids=lambda p: p.name)
+def test_templates_have_no_inline_scripts_or_styles(path):
+    html = path.read_text(encoding="utf-8")
+
+    assert not INLINE_SCRIPT.search(html)
+    assert not EVENT_HANDLER.search(html)
+    assert not INLINE_STYLE.search(html)
 
 
 @pytest.mark.parametrize(("method", "path"), PAGES)

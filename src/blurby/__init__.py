@@ -23,15 +23,35 @@ class BlurbyFlask(Flask):
         self.logger.error(f"Exception on {rule} [{request.method}]", exc_info=exc_info)
 
 
+# Pages may load only Blurby's own scripts, stylesheets and images: no inline
+# scripts or styles, nothing from other sites. Pico CSS draws its form icons as
+# data: SVGs. frame-ancestors keeps other sites from framing Blurby's buttons
+# under a decoy (clickjacking).
+CONTENT_SECURITY_POLICY = "; ".join(
+    [
+        "default-src 'none'",
+        "script-src 'self'",
+        "style-src 'self'",
+        "img-src 'self' data:",
+        "connect-src 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+        "base-uri 'none'",
+    ]
+)
+
+
 def set_privacy_headers(response):
     """Keep pages out of caches and keep their URLs, which hold links, private."""
     # Send a Referer only to Blurby itself, never to other sites. Not
     # no-referrer: under it, browsers send `Origin: null` with the page's own
     # form posts, and Blurby builds the new secret's link from Origin.
     response.headers["Referrer-Policy"] = "same-origin"
+    response.headers["X-Content-Type-Options"] = "nosniff"
     # Pages can show a secret or its link; static files can be cached as before.
     if response.mimetype == "text/html":
         response.headers["Cache-Control"] = "no-store"
+        response.headers["Content-Security-Policy"] = CONTENT_SECURITY_POLICY
     return response
 
 
